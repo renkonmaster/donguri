@@ -12,11 +12,7 @@
 ## 環境構築
 
 - [**pnpm**](https://pnpm.io/ja/installation#posix-システムの場合) がインストールされている必要があります。 
-- `frontend/` ディレクトリ内で、以下のコマンドを実行してください。
-  ```bash
-  pnpm env
-  pnpm install
-  ```
+- `frontend/` ディレクトリ内で、`pnpm install` コマンドを実行して依存関係をインストールしてください。
 
 ## 開発の流れ
 

@@ -1,0 +1,22 @@
+{
+  "name": "donguri-frontend",
+  "type": "module",
+  "private": true,
+  "packageManager": "pnpm@10.32.1+sha512.a706938f0e89ac1456b6563eab4edf1d1faf3368d1191fc5c59790e96dc918e4456ab2e67d613de1043d2e8c81f87303e6b40d4ffeca9df15ef1ad567348f2be",
+  "engines": {
+    "node": "24.14.0"
+  },
+  "scripts": {
+    "clean": "false",
+    "dev": "false",
+    "typecheck": "false",
+    "build": "false",
+    "preview": "false",
+    "lint": "run-p lint:check:*",
+    "lint:fix": "run-s --continue-on-error lint:fix:*",
+    "lint:check:eslint": "eslint --cache .",
+    "lint:fix:eslint": "eslint --cache --fix .",
+    "lint:check:stylelint": "stylelint --ignore-path .gitignore --cache \"**/*.{vue,css}\"",
+    "lint:fix:stylelint": "stylelint --ignore-path .gitignore --cache --fix \"**/*.{vue,css}\""
+  }
+}
