@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { useRouter } from 'vue-router';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import communicationBg from '@/assets/communication.png';
 import phoneBg from '@/assets/phone.png';
 
+const router = useRouter();
 const playerName = ref('');
 
 const mobileQuery = window.matchMedia('(max-width: 640px)');
@@ -27,7 +29,7 @@ const bgImage = computed(() =>
       class="page-bg relative min-h-screen"
       :style="{ backgroundImage: `url(${bgImage})` }"
     >
-      <div class="absolute inset-0 bg-black/40" />
+      <div class="absolute inset-0 bg-black/33" />
       <div class="relative flex min-h-screen flex-col items-center justify-center gap-6 px-6 pb-56 text-center">
         <h1 class="text-5xl font-bold tracking-widest text-white drop-shadow-lg">
           InterKnot
@@ -49,9 +51,11 @@ const bgImage = computed(() =>
             maxlength="20"
             class="rounded-xl border border-white/30 bg-white/20 px-4 py-3 text-center text-white placeholder-white/50 outline-none backdrop-blur-sm focus:border-white/60 focus:bg-white/25"
           >
+          <!-- TODO: バックエンド接続後は GPS 取得 → POST /api/rooms/join → 遷移に変更する -->
           <button
             :disabled="playerName.trim() === ''"
             class="rounded-xl bg-emerald-500 py-3 font-semibold text-white shadow transition-colors hover:bg-emerald-400 active:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-40"
+            @click="router.push('/game')"
           >
             マッチングを始める
           </button>

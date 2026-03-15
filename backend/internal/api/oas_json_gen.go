@@ -827,11 +827,16 @@ func (s *IntersectingEdgePair) encodeFields(e *jx.Encoder) {
 		e.FieldStart("second")
 		s.Second.Encode(e)
 	}
+	{
+		e.FieldStart("intersection_location")
+		s.IntersectionLocation.Encode(e)
+	}
 }
 
-var jsonFieldsNameOfIntersectingEdgePair = [2]string{
+var jsonFieldsNameOfIntersectingEdgePair = [3]string{
 	0: "first",
 	1: "second",
+	2: "intersection_location",
 }
 
 // Decode decodes IntersectingEdgePair from json.
@@ -863,6 +868,16 @@ func (s *IntersectingEdgePair) Decode(d *jx.Decoder) error {
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"second\"")
 			}
+		case "intersection_location":
+			requiredBitSet[0] |= 1 << 2
+			if err := func() error {
+				if err := s.IntersectionLocation.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"intersection_location\"")
+			}
 		default:
 			return d.Skip()
 		}
@@ -873,7 +888,7 @@ func (s *IntersectingEdgePair) Decode(d *jx.Decoder) error {
 	// Validate required fields.
 	var failures []validate.FieldError
 	for i, mask := range [1]uint8{
-		0b00000011,
+		0b00000111,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
 			// Mask only required fields and check equality to mask using XOR.

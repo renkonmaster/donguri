@@ -264,8 +264,9 @@ func (s *ErrorStatusCode) SetResponse(val Error) {
 
 // Ref: #/components/schemas/IntersectingEdgePair
 type IntersectingEdgePair struct {
-	First  OrderedEdge `json:"first"`
-	Second OrderedEdge `json:"second"`
+	First                OrderedEdge `json:"first"`
+	Second               OrderedEdge `json:"second"`
+	IntersectionLocation Location    `json:"intersection_location"`
 }
 
 // GetFirst returns the value of First.
@@ -278,6 +279,11 @@ func (s *IntersectingEdgePair) GetSecond() OrderedEdge {
 	return s.Second
 }
 
+// GetIntersectionLocation returns the value of IntersectionLocation.
+func (s *IntersectingEdgePair) GetIntersectionLocation() Location {
+	return s.IntersectionLocation
+}
+
 // SetFirst sets the value of First.
 func (s *IntersectingEdgePair) SetFirst(val OrderedEdge) {
 	s.First = val
@@ -286,6 +292,11 @@ func (s *IntersectingEdgePair) SetFirst(val OrderedEdge) {
 // SetSecond sets the value of Second.
 func (s *IntersectingEdgePair) SetSecond(val OrderedEdge) {
 	s.Second = val
+}
+
+// SetIntersectionLocation sets the value of IntersectionLocation.
+func (s *IntersectingEdgePair) SetIntersectionLocation(val Location) {
+	s.IntersectionLocation = val
 }
 
 // Ref: #/components/schemas/JoinRoomRequest

@@ -59,6 +59,10 @@ func (h *Handler) PutConnection(ctx context.Context, req *api.ConnectionRequest,
 						StartOrderIndex: pair.Second.StartOrderIndex,
 						EndOrderIndex:   pair.Second.EndOrderIndex,
 					},
+					IntersectionLocation: api.Location{
+						Lat: pair.Location.Lat,
+						Lng: pair.Location.Lng,
+					},
 				})
 			}
 		}
