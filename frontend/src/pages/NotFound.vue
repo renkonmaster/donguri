@@ -1,5 +1,11 @@
 <script setup lang="ts">
+import { useOgpHead } from '@/composables/useOgpHead';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
+
+useOgpHead(
+  '404 Not Found | InterKnot',
+  'ページが見つかりませんでした。',
+);
 </script>
 
 <template>

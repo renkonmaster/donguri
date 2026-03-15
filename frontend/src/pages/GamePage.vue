@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useOgpHead } from '@/composables/useOgpHead';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import GameScene from '@/components/GameScene.vue';
 import MatchingScene from '@/components/MatchingScene.vue';
@@ -8,6 +9,11 @@ import type { Player, Message } from '@/types/game';
 
 const route = useRoute();
 const router = useRouter();
+
+useOgpHead(
+  'InterKnot | ゲームページ',
+  'InterKnotのゲームページです。マッチング状況や参加者の位置情報を確認できます。',
+);
 
 const roomId = route.query.room_id as string;
 const playerId = route.query.player_id as string;

@@ -286,6 +286,15 @@ onMounted(async () => {
         : undefined;
       emit('click', { lat, lng, point });
     });
+    // Ctrl+ドラッグによる回転を無効化
+    m.on('mousedown', (e) => {
+      if (e.originalEvent.ctrlKey) {
+        m.dragRotate.disable();
+      }
+    });
+    m.on('mouseup', () => {
+      m.dragRotate.enable();
+    });
   });
 });
 
