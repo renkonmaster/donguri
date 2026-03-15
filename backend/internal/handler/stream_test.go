@@ -50,8 +50,8 @@ func TestSubscribeRoomStream_ReturnsReader(t *testing.T) {
 	defer cancel()
 
 	resp, err := h.SubscribeRoomStream(ctx, api.SubscribeRoomStreamParams{
-		RoomID:    uuid.New(),
-		XPlayerID: uuid.New(),
+		RoomID:   uuid.New(),
+		PlayerID: api.NewOptUUID(uuid.New()),
 	})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
