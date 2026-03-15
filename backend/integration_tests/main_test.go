@@ -7,11 +7,11 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/ory/dockertest/v3"
 	"github.com/renkonmaster/donguri/infrastructure/config"
 	"github.com/renkonmaster/donguri/infrastructure/database"
 	"github.com/renkonmaster/donguri/infrastructure/injector"
+	"gorm.io/gorm"
 )
 
 var globalServer http.Handler
@@ -57,9 +57,9 @@ func run(m *testing.M) error {
 
 	log.Println("wait for database container")
 
-	var db *sqlx.DB
+	var db *gorm.DB
 	if err := pool.Retry(func() error {
-		_db, err := database.Setup(c.PostgreSQLDSN())
+		_db, err := database.SetupGORM(c.PostgreSQLDSN())
 		if err != nil {
 			return err
 		}
