@@ -1,10 +1,28 @@
 package database
 
-import "database/sql"
+import (
+	"database/sql"
+	"fmt"
+	"os"
+	"path/filepath"
+	"runtime"
+)
 
-// TODO: 初期開発段階のためマイグレーション不要。このファイルごと削除し、
-// gorm.go の SetupGORM からの migrateTables 呼び出しも削除すること。
-// スキーマ変更時は既存テーブルを DROP して再作成する。
-func migrateTables(_ *sql.DB) error {
+func migrateTables(db *sql.DB) error {
+	_, filePath, _, ok := runtime.Caller(0)
+	if !ok {
+		return fmt.Errorf("detect current file path")
+	}
+
+	schemaPath := filepath.Join(filepath.Dir(filePath), "schema.sql")
+	schemaSQL, err := os.ReadFile(schemaPath)
+	if err != nil {
+		return fmt.Errorf("read schema file: %w", err)
+	}
+
+	if _, err := db.Exec(string(schemaSQL)); err != nil {
+		return fmt.Errorf("apply schema: %w", err)
+	}
+
 	return nil
 }
