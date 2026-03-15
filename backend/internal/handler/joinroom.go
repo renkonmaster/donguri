@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 
 	"github.com/google/uuid"
 	"github.com/renkonmaster/donguri/internal/api"
@@ -13,9 +14,11 @@ import (
 // JoinRoom implements [api.Handler].
 func (h *Handler) JoinRoom(ctx context.Context, req *api.JoinRoomRequest) (*api.JoinRoomResponse, error) {
 	if req == nil {
-		return nil, &api.ErrorStatus{
-			Code:    api.ErrorStatusCodeBadRequest,
-			Message: "request body is required",
+		return nil, &api.ErrorStatusCode{
+			StatusCode: http.StatusBadRequest,
+			Response: api.Error{
+				Message: "request is invalied",
+			},
 		}
 	}
 
