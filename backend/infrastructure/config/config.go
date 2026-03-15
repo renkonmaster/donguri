@@ -1,11 +1,10 @@
 package config
 
 import (
-	"net"
+	"fmt"
 	"strconv"
 
 	"github.com/alecthomas/kong"
-	"github.com/go-sql-driver/mysql"
 )
 
 type Config struct {
@@ -13,24 +12,23 @@ type Config struct {
 	DBUser  string `env:"DB_USER" default:"root"`
 	DBPass  string `env:"DB_PASS" default:"pass"`
 	DBHost  string `env:"DB_HOST" default:"localhost"`
-	DBPort  int    `env:"DB_PORT" default:"3306"`
+	DBPort  int    `env:"DB_PORT" default:"5432"`
 	DBName  string `env:"DB_NAME" default:"app"`
+	DBSSL   string `env:"DB_SSLMODE" default:"disable"`
 }
 
 func (c *Config) Parse() {
 	kong.Parse(c)
 }
 
-func (c Config) MySQLConfig() *mysql.Config {
-	mc := mysql.NewConfig()
-
-	mc.User = c.DBUser
-	mc.Passwd = c.DBPass
-	mc.Net = "tcp"
-	mc.Addr = net.JoinHostPort(c.DBHost, strconv.Itoa(c.DBPort))
-	mc.DBName = c.DBName
-	mc.Collation = "utf8mb4_general_ci"
-	mc.AllowNativePasswords = true
-
-	return mc
+func (c Config) PostgreSQLDSN() string {
+	return fmt.Sprintf(
+		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+		c.DBHost,
+		strconv.Itoa(c.DBPort),
+		c.DBUser,
+		c.DBPass,
+		c.DBName,
+		c.DBSSL,
+	)
 }
