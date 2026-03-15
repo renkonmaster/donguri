@@ -35,7 +35,9 @@ const bgImage = computed(() =>
         <p class="text-white/70">絡まった糸をほどく、位置情報ゲーム</p>
 
         <div class="mx-auto mt-2 flex w-full max-w-xs flex-col gap-4">
+          <label for="player-name" class="sr-only">名前</label>
           <input
+            id="player-name"
             v-model="playerName"
             type="text"
             placeholder="あなたの名前"
