@@ -25,7 +25,10 @@ const points: MapPoint[] = [
 <template>
   <DefaultLayout>
     <div class="h-[70svh] w-full overflow-hidden rounded-xl">
-      <GameMap :points="points" />
+      <GameMap
+        :points="points"
+        highlighted-id="5"
+      />
     </div>
   </DefaultLayout>
 </template>
