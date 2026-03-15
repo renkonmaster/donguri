@@ -1,4 +1,4 @@
-# donguri (仮) AI 向けガイド
+# InterKnot AI 向けガイド
 
 ## 前提情報
 
