@@ -15,10 +15,13 @@ import (
 
 const (
 	maxPlayersPerRoom = 8
-	gameStartDelay    = 5 * time.Second
 	gameDuration      = 10 * time.Minute
 	dbOpTimeout       = 5 * time.Second
 )
+
+// gameStartDelay is a variable so that tests can shorten the delay and
+// deterministically cover the "full → delay → room_started" path.
+var gameStartDelay = 5 * time.Second
 
 // JoinRoom implements [api.Handler].
 func (h *Handler) JoinRoom(ctx context.Context, req *api.JoinRoomRequest) (*api.JoinRoomResponse, error) {

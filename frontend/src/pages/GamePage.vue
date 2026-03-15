@@ -58,14 +58,23 @@ const maxPlayersPerRoom = 8;
 const gameStartCountdownSeconds = 5;
 
 async function fetchRoomState(): Promise<boolean> {
-  const res = await fetch(`/api/rooms/${roomId}`, {
-    headers: { 'X-Player-ID': playerId },
-  });
+  fetchController?.abort();
+  fetchController = new AbortController();
+  let res: Response;
+  try {
+    res = await fetch(`/api/rooms/${roomId}`, {
+      signal: fetchController.signal,
+      headers: { 'X-Player-ID': playerId },
+    });
+  }
+  catch {
+    return false;
+  }
   if (res.status === 404) {
     router.replace('/');
     return false;
   }
-  if (!res.ok) return true;
+  if (!res.ok) return false;
   const data = await res.json() as {
     status: 'matching' | 'playing' | 'finished';
     players: ApiPlayer[];
@@ -98,6 +107,7 @@ const matchingPoints = computed(() =>
 );
 
 let sse: EventSource | null = null;
+let fetchController: AbortController | null = null;
 
 onMounted(async () => {
   if (!roomId || !playerId) {
@@ -108,20 +118,26 @@ onMounted(async () => {
   if (!ok) return;
   sse = new EventSource(`/api/rooms/${roomId}/stream?player_id=${playerId}`);
   sse.addEventListener('message_received', (e: MessageEvent) => {
-    const data = JSON.parse(e.data) as unknown as {
-      id: string;
-      sender_id: string;
-      receiver_id: string;
-      content: string;
-      created_at: string;
-    };
-    messages.value.push({
-      id: data.id,
-      senderId: data.sender_id,
-      receiverId: data.receiver_id,
-      content: data.content,
-      createdAt: new Date(data.created_at),
-    });
+    try {
+      const data = JSON.parse(e.data) as unknown as {
+        id: string;
+        sender_id: string;
+        receiver_id: string;
+        content: string;
+        created_at: string;
+      };
+      if (!data.id || !data.sender_id || !data.receiver_id || !data.content || !data.created_at) return;
+      messages.value.push({
+        id: data.id,
+        senderId: data.sender_id,
+        receiverId: data.receiver_id,
+        content: data.content,
+        createdAt: new Date(data.created_at),
+      });
+    }
+    catch {
+      // ignore
+    }
   });
   sse.addEventListener('room_started', () => {
     if (countdownTimer !== null) {
@@ -138,6 +154,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   sse?.close();
+  fetchController?.abort();
   if (countdownTimer !== null) {
     clearInterval(countdownTimer);
   }

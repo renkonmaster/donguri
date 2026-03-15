@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -68,6 +69,45 @@ func TestJoinRoom_ReturnsIDs(t *testing.T) {
     assert.Assert(t, res != nil)
     assert.Assert(t, res.RoomID != uuid.Nil)
     assert.Assert(t, res.PlayerID != uuid.Nil)
+}
+
+func TestJoinRoom_FullRoom_PublishesRoomStartedEvent(t *testing.T) {
+	// gameStartDelay を書き換えるため t.Parallel() は呼ばない
+	original := gameStartDelay
+	gameStartDelay = 0
+	defer func() { gameStartDelay = original }()
+
+	h := setupJoinRoomHandler(t)
+	ctx := context.Background()
+
+	first, err := h.JoinRoom(ctx, &api.JoinRoomRequest{Name: "p0", Lat: 33.0, Lng: 131.0})
+	assert.NilError(t, err)
+
+	// room_updated が最大 7 個 + room_started が 1 個来るのでバッファを 20 に設定
+	sub := stream.NewSubscriber("test-sub", 20)
+	h.hub.Subscribe(first.RoomID.String(), sub)
+	defer h.hub.Unsubscribe(first.RoomID.String(), sub.ID)
+
+	for i := 1; i < maxPlayersPerRoom; i++ {
+		_, err = h.JoinRoom(ctx, &api.JoinRoomRequest{
+			Name: fmt.Sprintf("p%d", i),
+			Lat:  33.0 + float64(i)*0.01,
+			Lng:  131.0,
+		})
+		assert.NilError(t, err)
+	}
+
+	deadline := time.After(2 * time.Second)
+	for {
+		select {
+		case payload := <-sub.Ch:
+			if strings.Contains(string(payload), "event: room_started") {
+				return
+			}
+		case <-deadline:
+			t.Fatal("timeout: room_started event not received")
+		}
+	}
 }
 
 func TestJoinRoom_PublishesRoomUpdatedEvent(t *testing.T) {
