@@ -1,18 +1,18 @@
 package handler
 
 import (
-    "context"
-    "strings"
-    "testing"
-    "time"
+	"context"
+	"strings"
+	"testing"
+	"time"
 
-    "github.com/google/uuid"
-    "github.com/renkonmaster/donguri/internal/repository"
-    "github.com/renkonmaster/donguri/internal/service/stream"
-    "gotest.tools/v3/assert"
-    "gorm.io/driver/sqlite"
+	"github.com/google/uuid"
 	"github.com/renkonmaster/donguri/internal/api"
-    "gorm.io/gorm"
+	"github.com/renkonmaster/donguri/internal/repository"
+	"github.com/renkonmaster/donguri/internal/service/stream"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+	"gotest.tools/v3/assert"
 )
 
 func setupJoinRoomHandler(t *testing.T) *Handler {
