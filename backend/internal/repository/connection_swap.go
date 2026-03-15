@@ -37,17 +37,17 @@ func (r *Repository) SetSwapIntent(ctx context.Context, params SetSwapIntentPara
 	result := &SetSwapIntentResult{Matched: false, RoomStatus: database.RoomStatusPlaying}
 
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Clauses(clause.OnConflict{
-			Columns: []clause.Column{
-				{Name: "room_id"},
-				{Name: "sender_id"},
-				{Name: "receiver_id"},
-			},
-			DoUpdates: clause.Assignments(map[string]any{
-				"needs_swap": params.NeedsSwap,
-				"updated_at": gorm.Expr("NOW()"),
-			}),
-		}).Create(intent).Error; err != nil {
+		var conflict clause.OnConflict
+		var c1, c2, c3 clause.Column
+		c1.Name = "room_id"
+		c2.Name = "sender_id"
+		c3.Name = "receiver_id"
+		conflict.Columns = []clause.Column{c1, c2, c3}
+		conflict.DoUpdates = clause.Assignments(map[string]any{
+			"needs_swap": params.NeedsSwap,
+			"updated_at": gorm.Expr("NOW()"),
+		})
+		if err := tx.Clauses(conflict).Create(intent).Error; err != nil {
 			return fmt.Errorf("upsert swap intent: %w", err)
 		}
 
@@ -57,7 +57,7 @@ func (r *Repository) SetSwapIntent(ctx context.Context, params SetSwapIntentPara
 		}
 
 		var reverseIntentCount int64
-		if err := tx.Model(&database.ConnectionEntity{}).
+		if err := tx.Model(new(database.ConnectionEntity)).
 			Where(
 				"room_id = ? AND sender_id = ? AND receiver_id = ? AND needs_swap = TRUE",
 				params.RoomID,
@@ -76,8 +76,10 @@ func (r *Repository) SetSwapIntent(ctx context.Context, params SetSwapIntentPara
 
 		playerIDs := []uuid.UUID{params.SenderID, params.ReceiverID}
 		var swapPlayers []database.PlayerEntity
-		if err := tx.Model(&database.PlayerEntity{}).
-			Clauses(clause.Locking{Strength: "UPDATE"}).
+		var locking clause.Locking
+		locking.Strength = "UPDATE"
+		if err := tx.Model(new(database.PlayerEntity)).
+			Clauses(locking).
 			Where("room_id = ? AND id IN ?", params.RoomID, playerIDs).
 			Find(&swapPlayers).Error; err != nil {
 			return fmt.Errorf("select players for swap: %w", err)
@@ -97,7 +99,7 @@ func (r *Repository) SetSwapIntent(ctx context.Context, params SetSwapIntentPara
 		}
 
 		var maxOrderIndex int
-		if err := tx.Model(&database.PlayerEntity{}).
+		if err := tx.Model(new(database.PlayerEntity)).
 			Where("room_id = ?", params.RoomID).
 			Select("COALESCE(MAX(order_index), 0)").
 			Scan(&maxOrderIndex).Error; err != nil {
@@ -105,19 +107,19 @@ func (r *Repository) SetSwapIntent(ctx context.Context, params SetSwapIntentPara
 		}
 
 		tempOrderIndex := maxOrderIndex + 1
-		if err := tx.Model(&database.PlayerEntity{}).
+		if err := tx.Model(new(database.PlayerEntity)).
 			Where("room_id = ? AND id = ?", params.RoomID, params.SenderID).
 			Updates(map[string]any{"order_index": tempOrderIndex, "updated_at": gorm.Expr("NOW()")}).Error; err != nil {
 			return fmt.Errorf("move sender to temp order index: %w", err)
 		}
 
-		if err := tx.Model(&database.PlayerEntity{}).
+		if err := tx.Model(new(database.PlayerEntity)).
 			Where("room_id = ? AND id = ?", params.RoomID, params.ReceiverID).
 			Updates(map[string]any{"order_index": senderOrderIndex, "updated_at": gorm.Expr("NOW()")}).Error; err != nil {
 			return fmt.Errorf("move receiver to sender order index: %w", err)
 		}
 
-		if err := tx.Model(&database.PlayerEntity{}).
+		if err := tx.Model(new(database.PlayerEntity)).
 			Where("room_id = ? AND id = ?", params.RoomID, params.SenderID).
 			Updates(map[string]any{"order_index": receiverOrderIndex, "updated_at": gorm.Expr("NOW()")}).Error; err != nil {
 			return fmt.Errorf("move sender to receiver order index: %w", err)
@@ -128,7 +130,7 @@ func (r *Repository) SetSwapIntent(ctx context.Context, params SetSwapIntentPara
 			params.RoomID,
 			[]uuid.UUID{params.SenderID, params.ReceiverID},
 			[]uuid.UUID{params.SenderID, params.ReceiverID},
-		).Delete(&database.ConnectionEntity{}).Error; err != nil {
+		).Delete(new(database.ConnectionEntity)).Error; err != nil {
 			return fmt.Errorf("delete affected connections: %w", err)
 		}
 
@@ -139,12 +141,13 @@ func (r *Repository) SetSwapIntent(ctx context.Context, params SetSwapIntentPara
 		if intersectionCount != 0 {
 			return nil
 		}
-		if err := tx.Model(&database.RoomEntity{}).
+		if err := tx.Model(new(database.RoomEntity)).
 			Where("id = ?", params.RoomID).
 			Updates(map[string]any{"status": database.RoomStatusFinished, "updated_at": gorm.Expr("NOW()")}).Error; err != nil {
 			return fmt.Errorf("update room status to finished: %w", err)
 		}
 		result.RoomStatus = database.RoomStatusFinished
+
 		return nil
 	})
 	if err != nil {

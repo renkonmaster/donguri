@@ -82,7 +82,7 @@ func (r *Repository) GetRoomState(ctx context.Context, roomID, playerID uuid.UUI
 }
 
 func (r *Repository) selectRoomPlayers(ctx context.Context, roomID uuid.UUID) ([]RoomPlayerState, error) {
-	if r.db.Dialector.Name() == "sqlite" {
+	if r.db.Name() == "sqlite" {
 		var rows []struct {
 			ID         uuid.UUID `gorm:"column:id"`
 			Name       string    `gorm:"column:name"`
@@ -185,5 +185,6 @@ func parseEWKTPoint(ewkt string) (latLng, error) {
 	if _, err := fmt.Sscanf(body, "%f %f", &lng, &lat); err != nil {
 		return latLng{}, fmt.Errorf("parse EWKT coordinates %q: %w", ewkt, err)
 	}
+
 	return latLng{Lat: lat, Lng: lng}, nil
 }

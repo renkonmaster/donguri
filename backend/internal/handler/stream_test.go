@@ -34,10 +34,7 @@ func TestNewRoomStreamReader_SubscribeAndCleanup(t *testing.T) {
 	_, _ = reader.Read(buf)
 
 	deadline := time.Now().Add(500 * time.Millisecond)
-	for {
-		if hub.SubscriberCount(roomID) == 0 {
-			break
-		}
+	for hub.SubscriberCount(roomID) != 0 {
 		if time.Now().After(deadline) {
 			t.Fatal("subscriber was not cleaned up after context cancellation")
 		}
@@ -52,7 +49,10 @@ func TestSubscribeRoomStream_ReturnsReader(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	resp, err := h.SubscribeRoomStream(ctx, api.SubscribeRoomStreamParams{})
+	resp, err := h.SubscribeRoomStream(ctx, api.SubscribeRoomStreamParams{
+		RoomID:   uuid.New(),
+		PlayerID: api.NewOptUUID(uuid.New()),
+	})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -91,6 +91,7 @@ func TestPublishRoomEvent_DeliveredToSubscriber(t *testing.T) {
 			if !strings.Contains(chunk, `data: {"status":"playing"}`) {
 				t.Fatalf("event data missing: %q", chunk)
 			}
+
 			break
 		}
 

@@ -17,7 +17,8 @@ func setupRoomRepoForTest(t *testing.T) *Repository {
 
 	// t.Name() をそのままファイル名に使うとスラッシュが入るため UUID で一意化
 	dsn := "file:" + uuid.NewString() + "?mode=memory&cache=shared"
-	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{}) //nolint:exhaustruct
+	var config gorm.Config
+	db, err := gorm.Open(sqlite.Open(dsn), &config) 
 	assert.NilError(t, err)
 
 	// geography(Point,4326) は SQLite 非対応のため TEXT で代替

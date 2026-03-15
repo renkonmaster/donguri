@@ -8,9 +8,10 @@ type Hub struct {
 }
 
 func NewHub() *Hub {
-	return &Hub{
-		rooms: map[string]map[string]chan []byte{},
-	}
+	hub := new(Hub)
+	hub.rooms = map[string]map[string]chan []byte{}
+
+	return hub
 }
 
 func (h *Hub) Subscribe(roomID string, sub Subscriber) {
@@ -44,6 +45,7 @@ func (h *Hub) Publish(roomID string, payload []byte) {
 	room, ok := h.rooms[roomID]
 	if !ok {
 		h.mu.RUnlock()
+
 		return
 	}
 

@@ -26,17 +26,17 @@ func New(
 }
 
 // DeleteMyDirectionalIntent implements [api.Handler].
-func (h *Handler) DeleteMyDirectionalIntent(ctx context.Context, req *api.DirectionalIntentRequest, params api.DeleteMyDirectionalIntentParams) (*api.DirectionalIntentResponse, error) {
+func (h *Handler) DeleteMyDirectionalIntent(_ context.Context, _ *api.DirectionalIntentRequest, _ api.DeleteMyDirectionalIntentParams) (*api.DirectionalIntentResponse, error) {
 	panic("unimplemented")
 }
 
 // DeleteSwapIntent implements [api.Handler].
-func (h *Handler) DeleteSwapIntent(ctx context.Context, params api.DeleteSwapIntentParams) (*api.DeleteSwapIntentResponse, error) {
+func (h *Handler) DeleteSwapIntent(_ context.Context, _ api.DeleteSwapIntentParams) (*api.DeleteSwapIntentResponse, error) {
 	panic("unimplemented")
 }
 
 // PatchMyDirectionalIntent implements [api.Handler].
-func (h *Handler) PatchMyDirectionalIntent(ctx context.Context, req *api.DirectionalIntentRequest, params api.PatchMyDirectionalIntentParams) (*api.DirectionalIntentResponse, error) {
+func (h *Handler) PatchMyDirectionalIntent(_ context.Context, _ *api.DirectionalIntentRequest, _ api.PatchMyDirectionalIntentParams) (*api.DirectionalIntentResponse, error) {
 	panic("unimplemented")
 }
 
