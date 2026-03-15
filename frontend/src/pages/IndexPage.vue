@@ -1,17 +1,15 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import { useHead } from '@unhead/vue';
+import { useRouter } from 'vue-router';
+import { useOgpHead } from '@/composables/useOgpHead';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import communicationBg from '@/assets/communication.png';
 import phoneBg from '@/assets/phone.png';
 import logoImage from '@/assets/logo.png';
 
 const router = useRouter();
-const route = useRoute();
 const playerName = ref('');
 
-const baseUrl = import.meta.env.VITE_PUBLIC_URL;
 const isMobile = ref(false);
 
 let mobileQuery: MediaQueryList | null = null;
@@ -34,26 +32,10 @@ const bgImage = computed(() =>
   isMobile.value ? phoneBg : communicationBg,
 );
 
-useHead({
-  title: 'InterKnot | トップページ',
-  meta: [
-    { name: 'description', content: 'InterKnotのトップページです。名前を入力してマッチングを始められます。' },
-
-    { property: 'og:title', content: 'InterKnot | トップページ' },
-    { property: 'og:description', content: 'InterKnotのトップページです。名前を入力してマッチングを始められます。' },
-    { property: 'og:type', content: 'website' },
-    { property: 'og:url', content: `${baseUrl}${route.path}` },
-    { property: 'og:image', content: `${baseUrl}/ogp.png` },
-
-    { name: 'twitter:card', content: 'summary_large_image' },
-    { name: 'twitter:title', content: 'InterKnot | トップページ' },
-    { name: 'twitter:description', content: 'InterKnotのトップページです。名前を入力してマッチングを始められます。' },
-    { name: 'twitter:image', content: `${baseUrl}/ogp.png` },
-  ],
-  link: [
-    { rel: 'canonical', href: `${baseUrl}${route.path}` },
-  ],
-});
+useOgpHead(
+  'InterKnot | トップページ',
+  'InterKnotのトップページです。名前を入力してマッチングを始められます。',
+);
 
 const showRuleModal = ref(false);
 
