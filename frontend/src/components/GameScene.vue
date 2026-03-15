@@ -4,11 +4,15 @@ import GameMap from '@/components/GameMap.vue';
 import ChatOverlay from '@/components/ChatOverlay.vue';
 import type { MapClickPayload, MapPoint } from '@/types/map';
 import type { Player, Message } from '@/types/game';
+import { idToRgb } from '@/utils/pointColor';
 
 const props = defineProps<{
   myPlayerId: string;
   players: Player[];
   messages: Message[];
+  roomStatus: 'matching' | 'playing' | 'finished';
+  swapCount: number;
+  clearTimeMs: number | null;
 }>();
 
 const emit = defineEmits<{
@@ -49,6 +53,19 @@ const currentMessages = computed(() => {
   );
 });
 
+// orderIndex が変化した (= スワップ成立) プレイヤーの swapRequested をクリアする
+watch(
+  () => props.players,
+  (newPlayers, oldPlayers) => {
+    for (const newP of newPlayers) {
+      const oldP = oldPlayers?.find(p => p.id === newP.id);
+      if (oldP && oldP.orderIndex !== newP.orderIndex) {
+        swapRequested.delete(newP.id);
+      }
+    }
+  },
+);
+
 // playerId → その会話で既読済みの inbound (相手→自分) メッセージ件数
 const seenCount = reactive(new Map<string, number>());
 
@@ -73,12 +90,32 @@ const unreadPlayerIds = computed(() =>
     .map(p => p.id),
 );
 
+const sortedPlayers = computed(() =>
+  [...props.players].sort((a, b) => a.orderIndex - b.orderIndex),
+);
+
 // GameMap は order_index 順に並んだ MapPoint[] を受け取る
 const mapPoints = computed<MapPoint[]>(() =>
-  [...props.players]
-    .sort((a, b) => a.orderIndex - b.orderIndex)
-    .map(p => ({ id: p.id, lat: p.lat, lng: p.lng, name: p.name })),
+  sortedPlayers.value.map(p => ({ id: p.id, orderIndex: p.orderIndex, lat: p.lat, lng: p.lng, name: p.name })),
 );
+
+const formattedClearTime = computed(() => {
+  if (props.clearTimeMs === null) return '--:--';
+  const totalSeconds = Math.floor(props.clearTimeMs / 1000);
+  const m = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+  const s = (totalSeconds % 60).toString().padStart(2, '0');
+  return `${m}:${s}`;
+});
+
+const twitterShareUrl = computed(() => {
+  const text = `InterKnot で ${props.players.length} 人と一緒に糸をほどきました！ クリアタイム: ${formattedClearTime.value}（交換 ${props.swapCount} 回）`;
+  return `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&hashtags=InterKnot`;
+});
+
+function playerBadgeStyle(player: Player): Record<string, string> {
+  const [r, g, b] = idToRgb(String(player.orderIndex), 'highlight');
+  return { backgroundColor: `rgb(${r} ${g} ${b})` };
+}
 
 function onMapClick(payload: MapClickPayload) {
   if (!payload.point || payload.point.id === props.myPlayerId) return;
@@ -149,6 +186,100 @@ function onToggleSwap() {
         @toggle-swap="onToggleSwap"
       />
     </Transition>
+
+    <!-- ゲームクリアオーバーレイ -->
+    <Transition name="clear">
+      <div
+        v-if="roomStatus === 'finished'"
+        class="absolute inset-0 z-30 flex items-end justify-center bg-black/50 backdrop-blur-[2px] pb-8 px-4"
+      >
+        <div class="clear-card w-full max-w-sm rounded-3xl bg-white shadow-2xl overflow-hidden">
+          <!-- ヘッダー -->
+          <div class="bg-gradient-to-br from-emerald-400 to-teal-500 px-6 pt-7 pb-5 text-center text-white">
+            <p class="text-4xl mb-1">
+              &#127881;
+            </p>
+            <h1 class="text-3xl font-black tracking-tight">
+              ほどけた！
+            </h1>
+            <p class="mt-1 text-emerald-100 text-sm font-medium">
+              {{ players.length }} 人で糸を解きほぐしました
+            </p>
+          </div>
+
+          <!-- スタッツ -->
+          <div class="grid grid-cols-3 divide-x divide-gray-100 border-b border-gray-100">
+            <div class="py-4 text-center">
+              <p class="text-xs text-gray-400 mb-0.5">
+                タイム
+              </p>
+              <p class="text-xl font-bold text-gray-800 tabular-nums">
+                {{ formattedClearTime }}
+              </p>
+            </div>
+            <div class="py-4 text-center">
+              <p class="text-xs text-gray-400 mb-0.5">
+                交換回数
+              </p>
+              <p class="text-xl font-bold text-gray-800">
+                {{ swapCount }}<span class="text-sm font-normal text-gray-500">回</span>
+              </p>
+            </div>
+            <div class="py-4 text-center">
+              <p class="text-xs text-gray-400 mb-0.5">
+                参加人数
+              </p>
+              <p class="text-xl font-bold text-gray-800">
+                {{ players.length }}<span class="text-sm font-normal text-gray-500">人</span>
+              </p>
+            </div>
+          </div>
+
+          <!-- プレイヤーリスト -->
+          <div class="px-5 pt-4 pb-3">
+            <p class="text-xs font-semibold tracking-widest text-gray-400 mb-2 uppercase">
+              参加者
+            </p>
+            <div class="flex flex-wrap gap-1.5">
+              <span
+                v-for="p in sortedPlayers"
+                :key="p.id"
+                class="rounded-full px-3 py-1 text-sm font-semibold text-white"
+                :style="playerBadgeStyle(p)"
+              >
+                {{ p.name }}{{ p.id === myPlayerId ? ' ★' : '' }}
+              </span>
+            </div>
+          </div>
+
+          <!-- ボタン -->
+          <div class="px-5 pb-6 pt-2 flex flex-col gap-2">
+            <a
+              :href="twitterShareUrl"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="flex items-center justify-center gap-2 rounded-xl bg-black py-3 text-sm font-bold text-white transition-opacity hover:opacity-75"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                class="h-4 w-4 shrink-0"
+              >
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.26 5.625L18.245 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+              </svg>
+              X でシェア
+            </a>
+            <a
+              href="/"
+              class="flex items-center justify-center rounded-xl border-2 border-gray-200 py-3 text-sm font-bold text-gray-600 transition-colors hover:bg-gray-50"
+            >
+              トップページへ戻る
+            </a>
+          </div>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -161,5 +292,22 @@ function onToggleSwap() {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+.clear-enter-active {
+  transition: opacity 0.4s ease;
+}
+
+.clear-enter-active .clear-card {
+  transition: opacity 0.4s ease 0.1s, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s;
+}
+
+.clear-enter-from {
+  opacity: 0;
+}
+
+.clear-enter-from .clear-card {
+  opacity: 0;
+  transform: translateY(40px) scale(0.95);
 }
 </style>

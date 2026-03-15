@@ -6,6 +6,7 @@ const props = defineProps<{
   myPlayerId: string;
   maxCount: number;
   points: MapPoint[];
+  countdownSeconds?: number | null;
 }>();
 </script>
 
@@ -22,7 +23,12 @@ const props = defineProps<{
 
     <div class="relative border-t border-gray-200 bg-white px-4 py-3">
       <span class="block text-center text-lg font-medium text-gray-700">
-        {{ props.points.length }}/{{ props.maxCount }} 人参加
+        <template v-if="props.countdownSeconds != null">
+          ゲームまであと {{ props.countdownSeconds }} 秒…
+        </template>
+        <template v-else>
+          {{ props.points.length }}/{{ props.maxCount }} 人参加
+        </template>
       </span>
 
       <!-- ハッカソン中は退出機能未実装のため常にグレーアウト -->

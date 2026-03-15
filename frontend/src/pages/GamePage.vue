@@ -1,91 +1,216 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useOgpHead } from '@/composables/useOgpHead';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import GameScene from '@/components/GameScene.vue';
 import MatchingScene from '@/components/MatchingScene.vue';
 import type { Player, Message } from '@/types/game';
 
-type Scene = 'matching' | 'game';
-
-// デバッグ用: URL ハッシュでシーンを切り替え (/game#matching → matching, /game → game)
 const route = useRoute();
-const scene = computed<Scene>(() => route.hash === '#matching' ? 'matching' : 'game');
+const router = useRouter();
 
 useOgpHead(
   'InterKnot | ゲームページ',
   'InterKnotのゲームページです。マッチング状況や参加者の位置情報を確認できます。',
 );
 
-const myPlayerId = 'p5';
+const roomId = typeof route.query.room_id === 'string' ? route.query.room_id : '';
+const playerId = typeof route.query.player_id === 'string' ? route.query.player_id : '';
 
-const players: Player[] = [
-  { id: 'p1', name: 'Alice', orderIndex: 0, lat: -33.868, lng: 151.209 },
-  { id: 'p2', name: 'Bob', orderIndex: 1, lat: 40.712, lng: -74.006 },
-  { id: 'p3', name: 'Carol', orderIndex: 2, lat: 55.751, lng: 37.617 },
-  { id: 'p4', name: 'Dave', orderIndex: 3, lat: -23.550, lng: -46.633 },
-  { id: 'p5', name: 'りすりす', orderIndex: 4, lat: 35.689, lng: 139.692 },
-  { id: 'p6', name: 'Frank', orderIndex: 5, lat: 1.352, lng: 103.820 },
-];
+const roomStatus = ref<'matching' | 'playing' | 'finished'>('matching');
+const players = ref<Player[]>([]);
+const messages = ref<Message[]>([]);
+const countdownSeconds = ref<number | null>(null);
+let countdownTimer: ReturnType<typeof setInterval> | null = null;
 
-const messages = ref<Message[]>([
-  {
-    id: 'm1',
-    senderId: 'p4',
-    receiverId: 'p5',
-    content: 'ねえ、交換しようよ！',
-    createdAt: new Date('2025-01-01T12:00:00'),
-  },
-  {
-    id: 'm2',
-    senderId: 'p5',
-    receiverId: 'p4',
-    content: 'いいよ、交換ボタン押すね',
-    createdAt: new Date('2025-01-01T12:00:30'),
-  },
-]);
+const gameStartTime = ref<number | null>(null);
+const swapCount = ref(0);
+const clearTimeMs = ref<number | null>(null);
 
-function onSendMessage(receiverId: string, content: string) {
-  messages.value.push({
-    id: crypto.randomUUID(),
-    senderId: myPlayerId,
-    receiverId,
-    content,
-    createdAt: new Date(),
+watch(roomStatus, (newStatus) => {
+  if (newStatus === 'playing' && gameStartTime.value === null) {
+    gameStartTime.value = Date.now();
+  }
+  if (newStatus === 'finished' && clearTimeMs.value === null) {
+    clearTimeMs.value = gameStartTime.value !== null ? Date.now() - gameStartTime.value : null;
+  }
+}, { flush: 'sync' });
+
+type ApiPlayer = {
+  id: string;
+  name: string;
+  order_index: number;
+  location: { lat: number; lng: number };
+};
+
+function mapPlayer(p: ApiPlayer): Player {
+  return {
+    id: p.id,
+    name: p.name,
+    orderIndex: p.order_index,
+    lat: p.location.lat,
+    lng: p.location.lng,
+  };
+}
+
+const maxPlayersPerRoom = 8;
+const gameStartCountdownSeconds = 5;
+
+async function fetchRoomState(): Promise<boolean> {
+  fetchController?.abort();
+  fetchController = new AbortController();
+  let res: Response;
+  try {
+    res = await fetch(`/api/rooms/${roomId}`, {
+      signal: fetchController.signal,
+      headers: { 'X-Player-ID': playerId },
+    });
+  }
+  catch {
+    return false;
+  }
+  if (res.status === 404) {
+    router.replace('/');
+    return false;
+  }
+  if (!res.ok) return false;
+  const data = await res.json() as {
+    status: 'matching' | 'playing' | 'finished';
+    players: ApiPlayer[];
+  };
+  roomStatus.value = data.status;
+  players.value = data.players.map(mapPlayer);
+
+  if (data.status === 'matching' && data.players.length === maxPlayersPerRoom && countdownTimer === null) {
+    startCountdown();
+  }
+
+  return true;
+}
+
+function startCountdown() {
+  countdownSeconds.value = gameStartCountdownSeconds;
+  countdownTimer = setInterval(() => {
+    if (countdownSeconds.value === null || countdownSeconds.value <= 1) {
+      clearInterval(countdownTimer!);
+      countdownTimer = null;
+      countdownSeconds.value = null;
+      return;
+    }
+    countdownSeconds.value--;
+  }, 1000);
+}
+
+const matchingPoints = computed(() =>
+  players.value.map(p => ({ id: p.id, orderIndex: p.orderIndex, lat: p.lat, lng: p.lng, name: p.name })),
+);
+
+let sse: EventSource | null = null;
+let fetchController: AbortController | null = null;
+
+onMounted(async () => {
+  if (!roomId || !playerId) {
+    router.replace('/');
+    return;
+  }
+  const ok = await fetchRoomState();
+  if (!ok) return;
+  sse = new EventSource(`/api/rooms/${roomId}/stream?player_id=${playerId}`);
+  sse.addEventListener('message_received', (e: MessageEvent) => {
+    try {
+      const data = JSON.parse(e.data) as unknown as {
+        id: string;
+        sender_id: string;
+        receiver_id: string;
+        content: string;
+        created_at: string;
+      };
+      if (!data.id || !data.sender_id || !data.receiver_id || !data.content || !data.created_at) return;
+      messages.value.push({
+        id: data.id,
+        senderId: data.sender_id,
+        receiverId: data.receiver_id,
+        content: data.content,
+        createdAt: new Date(data.created_at),
+      });
+    }
+    catch {
+      // ignore
+    }
   });
+  sse.addEventListener('room_started', () => {
+    if (countdownTimer !== null) {
+      clearInterval(countdownTimer);
+      countdownTimer = null;
+    }
+    countdownSeconds.value = null;
+    void fetchRoomState();
+  });
+  sse.addEventListener('room_updated', () => {
+    void fetchRoomState();
+  });
+});
+
+onUnmounted(() => {
+  sse?.close();
+  fetchController?.abort();
+  if (countdownTimer !== null) {
+    clearInterval(countdownTimer);
+  }
+});
+
+async function onSendMessage(receiverId: string, content: string) {
+  const res = await fetch(`/api/rooms/${roomId}/messages`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Player-ID': playerId,
+    },
+    body: JSON.stringify({ receiver_id: receiverId, content }),
+  });
+  if (!res.ok) return;
+  // メッセージの追加は SSE の message_received イベントで行われる
 }
 
-function onToggleSwap(targetPlayerId: string, needsSwap: boolean) {
-  console.log('[GamePage] toggleSwap', targetPlayerId, needsSwap);
+async function onToggleSwap(targetPlayerId: string, needsSwap: boolean) {
+  const res = await fetch(`/api/rooms/${roomId}/connections/${targetPlayerId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Player-ID': playerId,
+    },
+    body: JSON.stringify({ needs_swap: needsSwap }),
+  });
+  if (!res.ok) return;
+  const data = await res.json() as unknown as { matched: boolean };
+  if (data.matched) {
+    swapCount.value++;
+    // ルーム状態の更新は SSE の room_updated イベント経由で行われる
+  }
 }
-
-// マッチング画面用スタブ
-const matchingMaxCount = 6;
-const matchingPoints = [players[0], players[2], players[3], players.find(p => p.id === myPlayerId)!].map(p => ({
-  id: p.id,
-  lat: p.lat,
-  lng: p.lng,
-  name: p.name,
-}));
 </script>
 
 <template>
   <DefaultLayout>
     <div class="h-svh">
       <GameScene
-        v-if="scene === 'game'"
-        :my-player-id="myPlayerId"
+        v-if="roomStatus !== 'matching'"
+        :my-player-id="playerId"
         :players="players"
         :messages="messages"
+        :room-status="roomStatus"
+        :swap-count="swapCount"
+        :clear-time-ms="clearTimeMs"
         @send-message="onSendMessage"
         @toggle-swap="onToggleSwap"
       />
       <MatchingScene
-        v-else-if="scene === 'matching'"
-        :my-player-id="myPlayerId"
-        :max-count="matchingMaxCount"
+        v-else
+        :my-player-id="playerId"
+        :max-count="maxPlayersPerRoom"
         :points="matchingPoints"
+        :countdown-seconds="countdownSeconds"
       />
     </div>
   </DefaultLayout>

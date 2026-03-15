@@ -13,6 +13,8 @@ import slide16Image from '@/assets/modal-images/Slide16.jpg';
 
 const router = useRouter();
 const playerName = ref('');
+const loading = ref(false);
+const errorMessage = ref('');
 
 const isMobile = ref(false);
 
@@ -91,6 +93,34 @@ function closeRuleModal() {
   showRuleModal.value = false;
 }
 
+async function startMatching() {
+  if (playerName.value.trim() === '') return;
+  loading.value = true;
+  errorMessage.value = '';
+  try {
+    // TODO: GPS 取得に切り替える
+    const lat = Math.random() * 130 - 60;
+    const lng = Math.random() * 360 - 180;
+    const res = await fetch('/api/rooms/join', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: playerName.value.trim(), lat, lng }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({})) as { message?: string };
+      throw new Error(data.message ?? 'サーバーエラーが発生しました');
+    }
+    const data = await res.json() as { room_id: string; player_id: string };
+    await router.push({ path: '/game', query: { room_id: data.room_id, player_id: data.player_id } });
+  }
+  catch (e) {
+    errorMessage.value = e instanceof Error ? e.message : 'エラーが発生しました';
+  }
+  finally {
+    loading.value = false;
+  }
+}
+
 function goToNextRuleSlide() {
   if (isLastRuleSlide.value) {
     closeRuleModal();
@@ -140,19 +170,26 @@ function goToRuleSlide(index: number) {
             type="text"
             placeholder="あなたの名前"
             maxlength="20"
-            class="rounded-xl border border-white/70 bg-white/90 px-4 py-3 text-center text-slate-700 placeholder-slate-400 outline-none shadow-md backdrop-blur-sm focus:border-sky-300 focus:bg-white"
+            :disabled="loading"
+            class="rounded-xl border border-white/30 bg-white/80 px-4 py-3 text-center text-gray-900 placeholder-gray-400 outline-none backdrop-blur-sm focus:border-white/60 focus:bg-white/90 disabled:opacity-60"
           >
+          <p
+            v-if="errorMessage"
+            class="text-sm text-red-300"
+          >
+            {{ errorMessage }}
+          </p>
 
           <div class="flex w-full items-center gap-2">
             <button
-              :disabled="playerName.trim() === ''"
+              :disabled="playerName.trim() === '' || loading"
               class="flex-1 rounded-xl bg-emerald-500 py-3 font-semibold text-white shadow transition-colors hover:bg-emerald-400 active:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-40"
-              @click="router.push('/game')"
+              @click="startMatching"
             >
-              マッチングをする
+              {{ loading ? 'マッチング中...' : 'マッチングをする' }}
             </button>
             <button
-              class="rounded-xl bg-white/90 py-3 px-4 flex items-center justify-center text-lg font-bold shadow hover:bg-slate-100 active:bg-slate-200"
+              class="rounded-xl bg-white/90 px-4 py-3 text-lg font-bold shadow transition-colors hover:bg-slate-100 active:bg-slate-200"
               aria-label="ルール説明"
               @click="openRuleModal"
             >

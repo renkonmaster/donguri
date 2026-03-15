@@ -36,25 +36,29 @@ func (r *Repository) CreateMessage(ctx context.Context, params CreateMessagePara
 	var players []database.PlayerEntity
 	if err := r.db.WithContext(ctx).
 		Model(new(database.PlayerEntity)).
-		Where("room_id = ? AND id IN ?", params.RoomID, []uuid.UUID{params.SenderID, params.ReceiverID}).
+		Where("room_id = ?", params.RoomID).
 		Select("id", "order_index").
 		Find(&players).Error; err != nil {
-		return nil, fmt.Errorf("select sender/receiver players: %w", err)
-	}
-	if len(players) != 2 {
-		return nil, ErrPlayerNotFoundInRoom
+		return nil, fmt.Errorf("select players in room: %w", err)
 	}
 
-	orderByPlayerID := make(map[uuid.UUID]int, 2)
+	orderByPlayerID := make(map[uuid.UUID]int, len(players))
 	for _, player := range players {
 		orderByPlayerID[player.ID] = player.OrderIndex
 	}
 
-	diff := orderByPlayerID[params.SenderID] - orderByPlayerID[params.ReceiverID]
+	senderOrder, senderInRoom := orderByPlayerID[params.SenderID]
+	receiverOrder, receiverInRoom := orderByPlayerID[params.ReceiverID]
+	if !senderInRoom || !receiverInRoom {
+		return nil, ErrPlayerNotFoundInRoom
+	}
+
+	n := len(players)
+	diff := senderOrder - receiverOrder
 	if diff < 0 {
 		diff = -diff
 	}
-	if diff != 1 {
+	if diff != 1 && diff != n-1 {
 		return nil, ErrPlayersNotAdjacent
 	}
 
