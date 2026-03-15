@@ -14,6 +14,213 @@ import (
 )
 
 // Encode implements json.Marshaler.
+func (s *ConnectionRequest) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *ConnectionRequest) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("needs_swap")
+		e.Bool(s.NeedsSwap)
+	}
+}
+
+var jsonFieldsNameOfConnectionRequest = [1]string{
+	0: "needs_swap",
+}
+
+// Decode decodes ConnectionRequest from json.
+func (s *ConnectionRequest) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ConnectionRequest to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "needs_swap":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Bool()
+				s.NeedsSwap = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"needs_swap\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode ConnectionRequest")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000001,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfConnectionRequest) {
+					name = jsonFieldsNameOfConnectionRequest[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ConnectionRequest) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ConnectionRequest) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
+func (s *ConnectionResponse) Encode(e *jx.Encoder) {
+	e.ObjStart()
+	s.encodeFields(e)
+	e.ObjEnd()
+}
+
+// encodeFields encodes fields.
+func (s *ConnectionResponse) encodeFields(e *jx.Encoder) {
+	{
+		e.FieldStart("matched")
+		e.Bool(s.Matched)
+	}
+	{
+		e.FieldStart("room_status")
+		s.RoomStatus.Encode(e)
+	}
+}
+
+var jsonFieldsNameOfConnectionResponse = [2]string{
+	0: "matched",
+	1: "room_status",
+}
+
+// Decode decodes ConnectionResponse from json.
+func (s *ConnectionResponse) Decode(d *jx.Decoder) error {
+	if s == nil {
+		return errors.New("invalid: unable to decode ConnectionResponse to nil")
+	}
+	var requiredBitSet [1]uint8
+
+	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
+		switch string(k) {
+		case "matched":
+			requiredBitSet[0] |= 1 << 0
+			if err := func() error {
+				v, err := d.Bool()
+				s.Matched = bool(v)
+				if err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"matched\"")
+			}
+		case "room_status":
+			requiredBitSet[0] |= 1 << 1
+			if err := func() error {
+				if err := s.RoomStatus.Decode(d); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return errors.Wrap(err, "decode field \"room_status\"")
+			}
+		default:
+			return d.Skip()
+		}
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "decode ConnectionResponse")
+	}
+	// Validate required fields.
+	var failures []validate.FieldError
+	for i, mask := range [1]uint8{
+		0b00000011,
+	} {
+		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
+			// Mask only required fields and check equality to mask using XOR.
+			//
+			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
+			// Bits of fields which would be set are actually bits of missed fields.
+			missed := bits.OnesCount8(result)
+			for bitN := 0; bitN < missed; bitN++ {
+				bitIdx := bits.TrailingZeros8(result)
+				fieldIdx := i*8 + bitIdx
+				var name string
+				if fieldIdx < len(jsonFieldsNameOfConnectionResponse) {
+					name = jsonFieldsNameOfConnectionResponse[fieldIdx]
+				} else {
+					name = strconv.Itoa(fieldIdx)
+				}
+				failures = append(failures, validate.FieldError{
+					Name:  name,
+					Error: validate.ErrFieldRequired,
+				})
+				// Reset bit.
+				result &^= 1 << bitIdx
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+
+	return nil
+}
+
+// MarshalJSON implements stdjson.Marshaler.
+func (s *ConnectionResponse) MarshalJSON() ([]byte, error) {
+	e := jx.Encoder{}
+	s.Encode(&e)
+	return e.Bytes(), nil
+}
+
+// UnmarshalJSON implements stdjson.Unmarshaler.
+func (s *ConnectionResponse) UnmarshalJSON(data []byte) error {
+	d := jx.DecodeBytes(data)
+	return s.Decode(d)
+}
+
+// Encode implements json.Marshaler.
 func (s *CreateMessageRequest) Encode(e *jx.Encoder) {
 	e.ObjStart()
 	s.encodeFields(e)
@@ -1587,213 +1794,6 @@ func (s RoomStatus) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON implements stdjson.Unmarshaler.
 func (s *RoomStatus) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode implements json.Marshaler.
-func (s *SwapIntentRequest) Encode(e *jx.Encoder) {
-	e.ObjStart()
-	s.encodeFields(e)
-	e.ObjEnd()
-}
-
-// encodeFields encodes fields.
-func (s *SwapIntentRequest) encodeFields(e *jx.Encoder) {
-	{
-		e.FieldStart("target_player_id")
-		json.EncodeUUID(e, s.TargetPlayerID)
-	}
-}
-
-var jsonFieldsNameOfSwapIntentRequest = [1]string{
-	0: "target_player_id",
-}
-
-// Decode decodes SwapIntentRequest from json.
-func (s *SwapIntentRequest) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode SwapIntentRequest to nil")
-	}
-	var requiredBitSet [1]uint8
-
-	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
-		switch string(k) {
-		case "target_player_id":
-			requiredBitSet[0] |= 1 << 0
-			if err := func() error {
-				v, err := json.DecodeUUID(d)
-				s.TargetPlayerID = v
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"target_player_id\"")
-			}
-		default:
-			return d.Skip()
-		}
-		return nil
-	}); err != nil {
-		return errors.Wrap(err, "decode SwapIntentRequest")
-	}
-	// Validate required fields.
-	var failures []validate.FieldError
-	for i, mask := range [1]uint8{
-		0b00000001,
-	} {
-		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
-			// Mask only required fields and check equality to mask using XOR.
-			//
-			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
-			// Bits of fields which would be set are actually bits of missed fields.
-			missed := bits.OnesCount8(result)
-			for bitN := 0; bitN < missed; bitN++ {
-				bitIdx := bits.TrailingZeros8(result)
-				fieldIdx := i*8 + bitIdx
-				var name string
-				if fieldIdx < len(jsonFieldsNameOfSwapIntentRequest) {
-					name = jsonFieldsNameOfSwapIntentRequest[fieldIdx]
-				} else {
-					name = strconv.Itoa(fieldIdx)
-				}
-				failures = append(failures, validate.FieldError{
-					Name:  name,
-					Error: validate.ErrFieldRequired,
-				})
-				// Reset bit.
-				result &^= 1 << bitIdx
-			}
-		}
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
-	}
-
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s *SwapIntentRequest) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *SwapIntentRequest) UnmarshalJSON(data []byte) error {
-	d := jx.DecodeBytes(data)
-	return s.Decode(d)
-}
-
-// Encode implements json.Marshaler.
-func (s *SwapIntentResponse) Encode(e *jx.Encoder) {
-	e.ObjStart()
-	s.encodeFields(e)
-	e.ObjEnd()
-}
-
-// encodeFields encodes fields.
-func (s *SwapIntentResponse) encodeFields(e *jx.Encoder) {
-	{
-		e.FieldStart("matched")
-		e.Bool(s.Matched)
-	}
-	{
-		e.FieldStart("room_status")
-		s.RoomStatus.Encode(e)
-	}
-}
-
-var jsonFieldsNameOfSwapIntentResponse = [2]string{
-	0: "matched",
-	1: "room_status",
-}
-
-// Decode decodes SwapIntentResponse from json.
-func (s *SwapIntentResponse) Decode(d *jx.Decoder) error {
-	if s == nil {
-		return errors.New("invalid: unable to decode SwapIntentResponse to nil")
-	}
-	var requiredBitSet [1]uint8
-
-	if err := d.ObjBytes(func(d *jx.Decoder, k []byte) error {
-		switch string(k) {
-		case "matched":
-			requiredBitSet[0] |= 1 << 0
-			if err := func() error {
-				v, err := d.Bool()
-				s.Matched = bool(v)
-				if err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"matched\"")
-			}
-		case "room_status":
-			requiredBitSet[0] |= 1 << 1
-			if err := func() error {
-				if err := s.RoomStatus.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"room_status\"")
-			}
-		default:
-			return d.Skip()
-		}
-		return nil
-	}); err != nil {
-		return errors.Wrap(err, "decode SwapIntentResponse")
-	}
-	// Validate required fields.
-	var failures []validate.FieldError
-	for i, mask := range [1]uint8{
-		0b00000011,
-	} {
-		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
-			// Mask only required fields and check equality to mask using XOR.
-			//
-			// If XOR result is not zero, result is not equal to expected, so some fields are missed.
-			// Bits of fields which would be set are actually bits of missed fields.
-			missed := bits.OnesCount8(result)
-			for bitN := 0; bitN < missed; bitN++ {
-				bitIdx := bits.TrailingZeros8(result)
-				fieldIdx := i*8 + bitIdx
-				var name string
-				if fieldIdx < len(jsonFieldsNameOfSwapIntentResponse) {
-					name = jsonFieldsNameOfSwapIntentResponse[fieldIdx]
-				} else {
-					name = strconv.Itoa(fieldIdx)
-				}
-				failures = append(failures, validate.FieldError{
-					Name:  name,
-					Error: validate.ErrFieldRequired,
-				})
-				// Reset bit.
-				result &^= 1 << bitIdx
-			}
-		}
-	}
-	if len(failures) > 0 {
-		return &validate.Error{Fields: failures}
-	}
-
-	return nil
-}
-
-// MarshalJSON implements stdjson.Marshaler.
-func (s *SwapIntentResponse) MarshalJSON() ([]byte, error) {
-	e := jx.Encoder{}
-	s.Encode(&e)
-	return e.Bytes(), nil
-}
-
-// UnmarshalJSON implements stdjson.Unmarshaler.
-func (s *SwapIntentResponse) UnmarshalJSON(data []byte) error {
 	d := jx.DecodeBytes(data)
 	return s.Decode(d)
 }

@@ -123,114 +123,6 @@ func decodeCreateMessageParams(args [1]string, argsEscaped bool, r *http.Request
 	return params, nil
 }
 
-// CreateSwapIntentParams is parameters of createSwapIntent operation.
-type CreateSwapIntentParams struct {
-	RoomID    uuid.UUID
-	XPlayerID uuid.UUID
-}
-
-func unpackCreateSwapIntentParams(packed middleware.Parameters) (params CreateSwapIntentParams) {
-	{
-		key := middleware.ParameterKey{
-			Name: "room_id",
-			In:   "path",
-		}
-		params.RoomID = packed[key].(uuid.UUID)
-	}
-	{
-		key := middleware.ParameterKey{
-			Name: "X-Player-ID",
-			In:   "header",
-		}
-		params.XPlayerID = packed[key].(uuid.UUID)
-	}
-	return params
-}
-
-func decodeCreateSwapIntentParams(args [1]string, argsEscaped bool, r *http.Request) (params CreateSwapIntentParams, _ error) {
-	h := uri.NewHeaderDecoder(r.Header)
-	// Decode path: room_id.
-	if err := func() error {
-		param := args[0]
-		if argsEscaped {
-			unescaped, err := url.PathUnescape(args[0])
-			if err != nil {
-				return errors.Wrap(err, "unescape path")
-			}
-			param = unescaped
-		}
-		if len(param) > 0 {
-			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "room_id",
-				Value:   param,
-				Style:   uri.PathStyleSimple,
-				Explode: false,
-			})
-
-			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
-					return err
-				}
-
-				c, err := conv.ToUUID(val)
-				if err != nil {
-					return err
-				}
-
-				params.RoomID = c
-				return nil
-			}(); err != nil {
-				return err
-			}
-		} else {
-			return validate.ErrFieldRequired
-		}
-		return nil
-	}(); err != nil {
-		return params, &ogenerrors.DecodeParamError{
-			Name: "room_id",
-			In:   "path",
-			Err:  err,
-		}
-	}
-	// Decode header: X-Player-ID.
-	if err := func() error {
-		cfg := uri.HeaderParameterDecodingConfig{
-			Name:    "X-Player-ID",
-			Explode: false,
-		}
-		if err := h.HasParam(cfg); err == nil {
-			if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
-				val, err := d.DecodeValue()
-				if err != nil {
-					return err
-				}
-
-				c, err := conv.ToUUID(val)
-				if err != nil {
-					return err
-				}
-
-				params.XPlayerID = c
-				return nil
-			}); err != nil {
-				return err
-			}
-		} else {
-			return err
-		}
-		return nil
-	}(); err != nil {
-		return params, &ogenerrors.DecodeParamError{
-			Name: "X-Player-ID",
-			In:   "header",
-			Err:  err,
-		}
-	}
-	return params, nil
-}
-
 // DeleteMyDirectionalIntentParams is parameters of deleteMyDirectionalIntent operation.
 type DeleteMyDirectionalIntentParams struct {
 	RoomID    uuid.UUID
@@ -783,6 +675,167 @@ func decodePatchMyDirectionalIntentParams(args [1]string, argsEscaped bool, r *h
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
 			Name: "room_id",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	// Decode header: X-Player-ID.
+	if err := func() error {
+		cfg := uri.HeaderParameterDecodingConfig{
+			Name:    "X-Player-ID",
+			Explode: false,
+		}
+		if err := h.HasParam(cfg); err == nil {
+			if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToUUID(val)
+				if err != nil {
+					return err
+				}
+
+				params.XPlayerID = c
+				return nil
+			}); err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "X-Player-ID",
+			In:   "header",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// PutConnectionParams is parameters of putConnection operation.
+type PutConnectionParams struct {
+	RoomID    uuid.UUID
+	TargetID  uuid.UUID
+	XPlayerID uuid.UUID
+}
+
+func unpackPutConnectionParams(packed middleware.Parameters) (params PutConnectionParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "room_id",
+			In:   "path",
+		}
+		params.RoomID = packed[key].(uuid.UUID)
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "target_id",
+			In:   "path",
+		}
+		params.TargetID = packed[key].(uuid.UUID)
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "X-Player-ID",
+			In:   "header",
+		}
+		params.XPlayerID = packed[key].(uuid.UUID)
+	}
+	return params
+}
+
+func decodePutConnectionParams(args [2]string, argsEscaped bool, r *http.Request) (params PutConnectionParams, _ error) {
+	h := uri.NewHeaderDecoder(r.Header)
+	// Decode path: room_id.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "room_id",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToUUID(val)
+				if err != nil {
+					return err
+				}
+
+				params.RoomID = c
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "room_id",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	// Decode path: target_id.
+	if err := func() error {
+		param := args[1]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[1])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "target_id",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToUUID(val)
+				if err != nil {
+					return err
+				}
+
+				params.TargetID = c
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "target_id",
 			In:   "path",
 			Err:  err,
 		}
