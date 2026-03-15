@@ -3,6 +3,7 @@ import type { RouteRecordRaw } from 'vue-router';
 export const routes: RouteRecordRaw[] = [
   {
     path: '/',
+    name: 'index',
     component: () => import('@/pages/IndexPage.vue'),
   },
   {

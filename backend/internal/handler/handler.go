@@ -5,9 +5,9 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/ras0q/go-backend-template/internal/api"
-	"github.com/ras0q/go-backend-template/internal/repository"
-	"github.com/ras0q/go-backend-template/internal/service/photo"
+	"github.com/renkonmaster/donguri/internal/api"
+	"github.com/renkonmaster/donguri/internal/repository"
+	"github.com/renkonmaster/donguri/internal/service/photo"
 )
 
 type Handler struct {

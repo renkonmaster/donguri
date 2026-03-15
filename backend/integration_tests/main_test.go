@@ -9,9 +9,9 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/ory/dockertest/v3"
-	"github.com/ras0q/go-backend-template/infrastructure/config"
-	"github.com/ras0q/go-backend-template/infrastructure/database"
-	"github.com/ras0q/go-backend-template/infrastructure/injector"
+	"github.com/renkonmaster/donguri/infrastructure/config"
+	"github.com/renkonmaster/donguri/infrastructure/database"
+	"github.com/renkonmaster/donguri/infrastructure/injector"
 )
 
 var globalServer http.Handler

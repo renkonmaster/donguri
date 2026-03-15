@@ -1,10 +1,10 @@
 package injector
 
 import (
-	"github.com/ras0q/go-backend-template/internal/api"
-	"github.com/ras0q/go-backend-template/internal/handler"
-	"github.com/ras0q/go-backend-template/internal/repository"
-	photo_service "github.com/ras0q/go-backend-template/internal/service/photo"
+	"github.com/renkonmaster/donguri/internal/api"
+	"github.com/renkonmaster/donguri/internal/handler"
+	"github.com/renkonmaster/donguri/internal/repository"
+	photo_service "github.com/renkonmaster/donguri/internal/service/photo"
 
 	"github.com/jmoiron/sqlx"
 )
