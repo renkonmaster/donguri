@@ -35,7 +35,8 @@ function mapPlayer(p: ApiPlayer): Player {
   };
 }
 
-const maxPlayersPerRoom = 4;
+const maxPlayersPerRoom = 8;
+const gameStartCountdownSeconds = 5;
 
 async function fetchRoomState() {
   const res = await fetch(`/api/rooms/${roomId}`, {
@@ -55,7 +56,7 @@ async function fetchRoomState() {
 }
 
 function startCountdown() {
-  countdownSeconds.value = 5;
+  countdownSeconds.value = gameStartCountdownSeconds;
   countdownTimer = setInterval(() => {
     if (countdownSeconds.value === null || countdownSeconds.value <= 1) {
       clearInterval(countdownTimer!);

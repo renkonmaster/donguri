@@ -13,6 +13,12 @@ import (
 	"github.com/renkonmaster/donguri/internal/repository"
 )
 
+const (
+	maxPlayersPerRoom = 8
+	gameStartDelay    = 5 * time.Second
+	gameDuration      = 10 * time.Minute
+)
+
 // JoinRoom implements [api.Handler].
 func (h *Handler) JoinRoom(ctx context.Context, req *api.JoinRoomRequest) (*api.JoinRoomResponse, error) {
 	if req == nil {
@@ -23,8 +29,6 @@ func (h *Handler) JoinRoom(ctx context.Context, req *api.JoinRoomRequest) (*api.
 			},
 		}
 	}
-
-	const maxPlayersPerRoom = 4
 
 	var (
 		roomID      uuid.UUID
@@ -74,7 +78,7 @@ func (h *Handler) JoinRoom(ctx context.Context, req *api.JoinRoomRequest) (*api.
 	}
 
 	if joinedCount == maxPlayersPerRoom {
-		go h.scheduleGameStart(roomID, maxPlayersPerRoom)
+		go h.scheduleGameStart(roomID)
 	}
 
 	return &api.JoinRoomResponse{
@@ -83,16 +87,11 @@ func (h *Handler) JoinRoom(ctx context.Context, req *api.JoinRoomRequest) (*api.
 	}, nil
 }
 
-const (
-	gameStartDelay = 5 * time.Second
-	gameDuration   = 10 * time.Minute
-)
-
-func (h *Handler) scheduleGameStart(roomID uuid.UUID, maxPlayers int) {
+func (h *Handler) scheduleGameStart(roomID uuid.UUID) {
 	time.Sleep(gameStartDelay)
 
 	ctx := context.Background()
-	changed, err := h.repo.MarkRoomPlayingIfFull(ctx, roomID, maxPlayers, maxPlayers, gameDuration)
+	changed, err := h.repo.MarkRoomPlayingIfFull(ctx, roomID, maxPlayersPerRoom, maxPlayersPerRoom, gameDuration)
 	if err != nil {
 		slog.Error("scheduleGameStart: failed to mark room playing", "room_id", roomID, "error", err)
 		return
