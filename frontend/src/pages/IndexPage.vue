@@ -1,13 +1,32 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
+import communicationBg from '@/assets/communication.png';
+import phoneBg from '@/assets/phone.png';
 
 const playerName = ref('');
+
+const mobileQuery = window.matchMedia('(max-width: 640px)');
+const isMobile = ref(mobileQuery.matches);
+
+function onQueryChange(e: MediaQueryListEvent) {
+  isMobile.value = e.matches;
+}
+
+onMounted(() => mobileQuery.addEventListener('change', onQueryChange));
+onUnmounted(() => mobileQuery.removeEventListener('change', onQueryChange));
+
+const bgImage = computed(() =>
+  isMobile.value ? phoneBg : communicationBg
+);
 </script>
 
 <template>
   <DefaultLayout>
-    <div class="page-bg relative min-h-screen">
+    <div
+      class="page-bg relative min-h-screen"
+      :style="{ backgroundImage: `url(${bgImage})` }"
+    >
       <div class="absolute inset-0 bg-black/40" />
       <div class="relative flex min-h-screen flex-col items-center justify-center gap-6 px-6 pb-56 text-center">
         <h1 class="text-5xl font-bold tracking-widest text-white drop-shadow-lg">
@@ -37,14 +56,12 @@ const playerName = ref('');
 
 <style scoped>
 .page-bg {
-  background-image: url('/communication.png');
   background-size: cover;
   background-position: calc(50% - 2px) center;
 }
 
 @media (max-width: 640px) {
   .page-bg {
-    background-image: url('/phone.png');
     background-position: center;
     overflow-x: hidden;
   }
