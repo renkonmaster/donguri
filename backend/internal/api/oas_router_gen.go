@@ -11,14 +11,17 @@ import (
 )
 
 var (
-	rn8AllowedHeaders = map[string]string{
+	rn9AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
 	}
 	rn2AllowedHeaders = map[string]string{
 		"GET": "X-Player-Id",
 	}
-	rn12AllowedHeaders = map[string]string{
+	rn13AllowedHeaders = map[string]string{
 		"PUT": "Content-Type,X-Player-Id",
+	}
+	rn8AllowedHeaders = map[string]string{
+		"GET": "X-Player-Id",
 	}
 	rn3AllowedHeaders = map[string]string{
 		"GET":  "X-Player-Id",
@@ -112,7 +115,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						default:
 							s.notAllowed(w, r, notAllowedParams{
 								allowedMethods: "POST",
-								allowedHeaders: rn8AllowedHeaders,
+								allowedHeaders: rn9AllowedHeaders,
 								acceptPost:     "application/json",
 								acceptPatch:    "",
 							})
@@ -190,7 +193,34 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							default:
 								s.notAllowed(w, r, notAllowedParams{
 									allowedMethods: "PUT",
-									allowedHeaders: rn12AllowedHeaders,
+									allowedHeaders: rn13AllowedHeaders,
+									acceptPost:     "",
+									acceptPatch:    "",
+								})
+							}
+
+							return
+						}
+
+					case 'i': // Prefix: "intersections"
+
+						if l := len("intersections"); len(elem) >= l && elem[0:l] == "intersections" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							// Leaf node.
+							switch r.Method {
+							case "GET":
+								s.handleGetRoomIntersectionsRequest([1]string{
+									args[0],
+								}, elemIsEscaped, w, r)
+							default:
+								s.notAllowed(w, r, notAllowedParams{
+									allowedMethods: "GET",
+									allowedHeaders: rn8AllowedHeaders,
 									acceptPost:     "",
 									acceptPatch:    "",
 								})
@@ -572,6 +602,31 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 								r.pathPattern = "/api/rooms/{room_id}/connections/{target_id}"
 								r.args = args
 								r.count = 2
+								return r, true
+							default:
+								return
+							}
+						}
+
+					case 'i': // Prefix: "intersections"
+
+						if l := len("intersections"); len(elem) >= l && elem[0:l] == "intersections" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							// Leaf node.
+							switch method {
+							case "GET":
+								r.name = GetRoomIntersectionsOperation
+								r.summary = "Get intersecting edge pairs in room"
+								r.operationID = "getRoomIntersections"
+								r.operationGroup = ""
+								r.pathPattern = "/api/rooms/{room_id}/intersections"
+								r.args = args
+								r.count = 1
 								return r, true
 							default:
 								return
