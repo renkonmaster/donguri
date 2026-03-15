@@ -44,7 +44,7 @@ const playerName = ref('');
 
 @media (max-width: 640px) {
   .page-bg {
-    background-image: url('/正方形.png');
+    background-image: url('/phone.png');
     background-position: center;
     overflow-x: hidden;
   }
