@@ -27,7 +27,7 @@ const bgImage = computed(() =>
       class="page-bg relative min-h-screen"
       :style="{ backgroundImage: `url(${bgImage})` }"
     >
-      <div class="absolute inset-0 bg-black/40" />
+      <div class="absolute inset-0 bg-black/33" />
       <div class="relative flex min-h-screen flex-col items-center justify-center gap-6 px-6 pb-56 text-center">
         <h1 class="text-5xl font-bold tracking-widest text-white drop-shadow-lg">
           InterKnot
