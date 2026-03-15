@@ -45,7 +45,49 @@ CREATE TABLE IF NOT EXISTS connections (
 CREATE INDEX IF NOT EXISTS idx_connections_sender_id ON connections(sender_id);
 CREATE INDEX IF NOT EXISTS idx_connections_receiver_id ON connections(receiver_id);
 
+CREATE OR REPLACE FUNCTION get_room_intersection_count(target_room_id UUID)
+RETURNS INTEGER
+LANGUAGE SQL
+STABLE
+AS $$
+WITH ordered_players AS (
+	SELECT
+		id,
+		order_index,
+		location::geometry AS geom,
+		LEAD(id) OVER (ORDER BY order_index) AS next_id,
+		LEAD(location::geometry) OVER (ORDER BY order_index) AS next_geom,
+		FIRST_VALUE(id) OVER (ORDER BY order_index) AS first_id,
+		FIRST_VALUE(location::geometry) OVER (ORDER BY order_index) AS first_geom
+	FROM players
+	WHERE room_id = target_room_id
+),
+segments AS (
+	SELECT
+		id AS from_id,
+		COALESCE(next_id, first_id) AS to_id,
+		ST_MakeLine(geom, COALESCE(next_geom, first_geom)) AS segment
+	FROM ordered_players
+),
+segment_pairs AS (
+	SELECT
+		s1.segment AS segment1,
+		s2.segment AS segment2
+	FROM segments s1
+	JOIN segments s2 ON s1.from_id < s2.from_id
+	WHERE
+		s1.from_id <> s2.from_id
+		AND s1.from_id <> s2.to_id
+		AND s1.to_id <> s2.from_id
+		AND s1.to_id <> s2.to_id
+)
+SELECT COALESCE(COUNT(*), 0)::INTEGER
+FROM segment_pairs
+WHERE ST_Crosses(segment1, segment2);
+$$;
+
 -- +goose Down
+DROP FUNCTION IF EXISTS get_room_intersection_count(UUID);
 DROP TABLE IF EXISTS connections;
 DROP TABLE IF EXISTS messages;
 DROP TABLE IF EXISTS players;

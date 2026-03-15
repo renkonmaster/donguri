@@ -12,7 +12,6 @@ import (
 )
 
 type Handler struct {
-	api.UnimplementedHandler
 	repo *repository.Repository
 	hub  *stream.Hub
 }
@@ -62,44 +61,6 @@ func (h *Handler) CreateMessage(ctx context.Context, req *api.CreateMessageReque
 	}
 
 	return message, nil
-}
-
-// CreateSwapIntent implements [api.Handler].
-func (h *Handler) CreateSwapIntent(ctx context.Context, req *api.SwapIntentRequest, params api.CreateSwapIntentParams) (*api.SwapIntentResponse, error) {
-	if req == nil {
-		return nil, &api.ErrorStatusCode{
-			StatusCode: http.StatusBadRequest,
-			Response: api.Error{
-				Message: "request body is required",
-			},
-		}
-	}
-
-	if err := h.repo.SetSwapIntent(ctx, repository.SetSwapIntentParams{
-		RoomID:     params.RoomID,
-		SenderID:   params.XPlayerID,
-		ReceiverID: req.TargetPlayerID,
-		NeedsSwap:  true,
-	}); err != nil {
-		return nil, err
-	}
-
-	response := &api.SwapIntentResponse{
-		Matched:    false,
-		RoomStatus: api.RoomStatusPlaying,
-	}
-
-	payload := map[string]any{
-		"sender_id":        params.XPlayerID,
-		"target_player_id": req.TargetPlayerID,
-		"matched":          response.Matched,
-		"room_status":      response.RoomStatus,
-	}
-	if b, marshalErr := json.Marshal(payload); marshalErr == nil {
-		h.publishRoomEvent(params.RoomID, "connection_updated", b)
-	}
-
-	return response, nil
 }
 
 // DeleteMyDirectionalIntent implements [api.Handler].
