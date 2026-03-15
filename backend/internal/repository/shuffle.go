@@ -64,12 +64,14 @@ func (r *Repository) ShufflePlayerOrderIndices(ctx context.Context, roomID uuid.
 		}
 
 		valid = true
+
 		break
 	}
 
 	if !valid {
 		slog.Warn("ShufflePlayerOrderIndices: valid shuffle not found, applying last attempt", "room_id", roomID)
 	}
+
 	return applyOrderIndexPermutation(ctx, r.db, roomID, ids, perm)
 }
 
@@ -77,6 +79,7 @@ func (r *Repository) ShufflePlayerOrderIndices(ctx context.Context, roomID uuid.
 // unique 制約の競合を避けるため、一度 n..2n-1 の仮値にシフトしてから最終値を設定する。
 func applyOrderIndexPermutation(ctx context.Context, db *gorm.DB, roomID uuid.UUID, ids []uuid.UUID, perm []int) error {
 	n := len(ids)
+
 	return db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Model(new(database.PlayerEntity)).
 			Where("room_id = ?", roomID).
@@ -97,6 +100,7 @@ func applyOrderIndexPermutation(ctx context.Context, db *gorm.DB, roomID uuid.UU
 				return fmt.Errorf("set order_index %d: %w", i, err)
 			}
 		}
+
 		return nil
 	})
 }
@@ -112,6 +116,7 @@ func countIntersectionsInMem(pts []Point) int {
 			}
 		}
 	}
+
 	return count
 }
 
@@ -128,6 +133,7 @@ func solvableInOneSwap(pts []Point) bool {
 			}
 		}
 	}
+
 	return false
 }
 
@@ -137,6 +143,7 @@ func segmentsIntersect(p1, p2, p3, p4 Point) bool {
 	d2 := crossProduct(p3, p4, p2)
 	d3 := crossProduct(p1, p2, p3)
 	d4 := crossProduct(p1, p2, p4)
+
 	return ((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) &&
 		((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0))
 }
