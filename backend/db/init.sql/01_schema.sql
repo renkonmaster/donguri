@@ -1,4 +1,5 @@
--- +goose Up
+CREATE EXTENSION IF NOT EXISTS postgis;
+
 CREATE TABLE IF NOT EXISTS rooms (
 	id UUID PRIMARY KEY,
 	status TEXT NOT NULL CHECK (status IN ('matching', 'playing', 'finished')),
@@ -85,10 +86,3 @@ SELECT COALESCE(COUNT(*), 0)::INTEGER
 FROM segment_pairs
 WHERE ST_Crosses(segment1, segment2);
 $$;
-
--- +goose Down
-DROP FUNCTION IF EXISTS get_room_intersection_count(UUID);
-DROP TABLE IF EXISTS connections;
-DROP TABLE IF EXISTS messages;
-DROP TABLE IF EXISTS players;
-DROP TABLE IF EXISTS rooms;
