@@ -14,12 +14,6 @@ type Handler interface {
 	//
 	// POST /api/rooms/{room_id}/messages
 	CreateMessage(ctx context.Context, req *CreateMessageRequest, params CreateMessageParams) (*Message, error)
-	// CreateSwapIntent implements createSwapIntent operation.
-	//
-	// Set swap intent ON by target player ID.
-	//
-	// POST /api/rooms/{room_id}/swaps/intents
-	CreateSwapIntent(ctx context.Context, req *SwapIntentRequest, params CreateSwapIntentParams) (*SwapIntentResponse, error)
 	// DeleteMyDirectionalIntent implements deleteMyDirectionalIntent operation.
 	//
 	// Set directional swap intent OFF (prev or next).
@@ -62,6 +56,12 @@ type Handler interface {
 	//
 	// GET /api/v1/ping
 	Ping(ctx context.Context) (PingOK, error)
+	// PutConnection implements putConnection operation.
+	//
+	// Upsert connection intent by target player ID.
+	//
+	// PUT /api/rooms/{room_id}/connections/{target_id}
+	PutConnection(ctx context.Context, req *ConnectionRequest, params PutConnectionParams) (*ConnectionResponse, error)
 	// SubscribeRoomStream implements subscribeRoomStream operation.
 	//
 	// Subscribe room events (SSE).

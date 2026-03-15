@@ -7,7 +7,6 @@ type OperationName = string
 
 const (
 	CreateMessageOperation             OperationName = "CreateMessage"
-	CreateSwapIntentOperation          OperationName = "CreateSwapIntent"
 	DeleteMyDirectionalIntentOperation OperationName = "DeleteMyDirectionalIntent"
 	DeleteSwapIntentOperation          OperationName = "DeleteSwapIntent"
 	GetMessagesOperation               OperationName = "GetMessages"
@@ -15,5 +14,6 @@ const (
 	JoinRoomOperation                  OperationName = "JoinRoom"
 	PatchMyDirectionalIntentOperation  OperationName = "PatchMyDirectionalIntent"
 	PingOperation                      OperationName = "Ping"
+	PutConnectionOperation             OperationName = "PutConnection"
 	SubscribeRoomStreamOperation       OperationName = "SubscribeRoomStream"
 )

@@ -11,24 +11,24 @@ import (
 )
 
 var (
-	rn9AllowedHeaders = map[string]string{
+	rn8AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
 	}
 	rn2AllowedHeaders = map[string]string{
 		"GET": "X-Player-Id",
 	}
+	rn12AllowedHeaders = map[string]string{
+		"PUT": "Content-Type,X-Player-Id",
+	}
 	rn3AllowedHeaders = map[string]string{
 		"GET":  "X-Player-Id",
 		"POST": "Content-Type,X-Player-Id",
 	}
-	rn6AllowedHeaders = map[string]string{
+	rn5AllowedHeaders = map[string]string{
 		"DELETE": "Content-Type,X-Player-Id",
 		"PATCH":  "Content-Type,X-Player-Id",
 	}
-	rn5AllowedHeaders = map[string]string{
-		"POST": "Content-Type,X-Player-Id",
-	}
-	rn8AllowedHeaders = map[string]string{
+	rn7AllowedHeaders = map[string]string{
 		"DELETE": "X-Player-Id",
 	}
 )
@@ -112,7 +112,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						default:
 							s.notAllowed(w, r, notAllowedParams{
 								allowedMethods: "POST",
-								allowedHeaders: rn9AllowedHeaders,
+								allowedHeaders: rn8AllowedHeaders,
 								acceptPost:     "application/json",
 								acceptPatch:    "",
 							})
@@ -162,6 +162,43 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						break
 					}
 					switch elem[0] {
+					case 'c': // Prefix: "connections/"
+
+						if l := len("connections/"); len(elem) >= l && elem[0:l] == "connections/" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						// Param: "target_id"
+						// Leaf parameter, slashes are prohibited
+						idx := strings.IndexByte(elem, '/')
+						if idx >= 0 {
+							break
+						}
+						args[1] = elem
+						elem = ""
+
+						if len(elem) == 0 {
+							// Leaf node.
+							switch r.Method {
+							case "PUT":
+								s.handlePutConnectionRequest([2]string{
+									args[0],
+									args[1],
+								}, elemIsEscaped, w, r)
+							default:
+								s.notAllowed(w, r, notAllowedParams{
+									allowedMethods: "PUT",
+									allowedHeaders: rn12AllowedHeaders,
+									acceptPost:     "",
+									acceptPatch:    "",
+								})
+							}
+
+							return
+						}
+
 					case 'm': // Prefix: "messages"
 
 						if l := len("messages"); len(elem) >= l && elem[0:l] == "messages" {
@@ -215,7 +252,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							default:
 								s.notAllowed(w, r, notAllowedParams{
 									allowedMethods: "DELETE,PATCH",
-									allowedHeaders: rn6AllowedHeaders,
+									allowedHeaders: rn5AllowedHeaders,
 									acceptPost:     "",
 									acceptPatch:    "application/json",
 								})
@@ -263,69 +300,41 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 								return
 							}
 
-						case 'w': // Prefix: "waps/intents"
+						case 'w': // Prefix: "waps/intents/"
 
-							if l := len("waps/intents"); len(elem) >= l && elem[0:l] == "waps/intents" {
+							if l := len("waps/intents/"); len(elem) >= l && elem[0:l] == "waps/intents/" {
 								elem = elem[l:]
 							} else {
 								break
 							}
 
+							// Param: "target_player_id"
+							// Leaf parameter, slashes are prohibited
+							idx := strings.IndexByte(elem, '/')
+							if idx >= 0 {
+								break
+							}
+							args[1] = elem
+							elem = ""
+
 							if len(elem) == 0 {
+								// Leaf node.
 								switch r.Method {
-								case "POST":
-									s.handleCreateSwapIntentRequest([1]string{
+								case "DELETE":
+									s.handleDeleteSwapIntentRequest([2]string{
 										args[0],
+										args[1],
 									}, elemIsEscaped, w, r)
 								default:
 									s.notAllowed(w, r, notAllowedParams{
-										allowedMethods: "POST",
-										allowedHeaders: rn5AllowedHeaders,
-										acceptPost:     "application/json",
+										allowedMethods: "DELETE",
+										allowedHeaders: rn7AllowedHeaders,
+										acceptPost:     "",
 										acceptPatch:    "",
 									})
 								}
 
 								return
-							}
-							switch elem[0] {
-							case '/': // Prefix: "/"
-
-								if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
-									elem = elem[l:]
-								} else {
-									break
-								}
-
-								// Param: "target_player_id"
-								// Leaf parameter, slashes are prohibited
-								idx := strings.IndexByte(elem, '/')
-								if idx >= 0 {
-									break
-								}
-								args[1] = elem
-								elem = ""
-
-								if len(elem) == 0 {
-									// Leaf node.
-									switch r.Method {
-									case "DELETE":
-										s.handleDeleteSwapIntentRequest([2]string{
-											args[0],
-											args[1],
-										}, elemIsEscaped, w, r)
-									default:
-										s.notAllowed(w, r, notAllowedParams{
-											allowedMethods: "DELETE",
-											allowedHeaders: rn8AllowedHeaders,
-											acceptPost:     "",
-											acceptPatch:    "",
-										})
-									}
-
-									return
-								}
-
 							}
 
 						}
@@ -535,6 +544,40 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 						break
 					}
 					switch elem[0] {
+					case 'c': // Prefix: "connections/"
+
+						if l := len("connections/"); len(elem) >= l && elem[0:l] == "connections/" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						// Param: "target_id"
+						// Leaf parameter, slashes are prohibited
+						idx := strings.IndexByte(elem, '/')
+						if idx >= 0 {
+							break
+						}
+						args[1] = elem
+						elem = ""
+
+						if len(elem) == 0 {
+							// Leaf node.
+							switch method {
+							case "PUT":
+								r.name = PutConnectionOperation
+								r.summary = "Upsert connection intent by target player ID"
+								r.operationID = "putConnection"
+								r.operationGroup = ""
+								r.pathPattern = "/api/rooms/{room_id}/connections/{target_id}"
+								r.args = args
+								r.count = 2
+								return r, true
+							default:
+								return
+							}
+						}
+
 					case 'm': // Prefix: "messages"
 
 						if l := len("messages"); len(elem) >= l && elem[0:l] == "messages" {
@@ -640,64 +683,38 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 								}
 							}
 
-						case 'w': // Prefix: "waps/intents"
+						case 'w': // Prefix: "waps/intents/"
 
-							if l := len("waps/intents"); len(elem) >= l && elem[0:l] == "waps/intents" {
+							if l := len("waps/intents/"); len(elem) >= l && elem[0:l] == "waps/intents/" {
 								elem = elem[l:]
 							} else {
 								break
 							}
 
+							// Param: "target_player_id"
+							// Leaf parameter, slashes are prohibited
+							idx := strings.IndexByte(elem, '/')
+							if idx >= 0 {
+								break
+							}
+							args[1] = elem
+							elem = ""
+
 							if len(elem) == 0 {
+								// Leaf node.
 								switch method {
-								case "POST":
-									r.name = CreateSwapIntentOperation
-									r.summary = "Set swap intent ON by target player ID"
-									r.operationID = "createSwapIntent"
+								case "DELETE":
+									r.name = DeleteSwapIntentOperation
+									r.summary = "Cancel swap intent by target player ID"
+									r.operationID = "deleteSwapIntent"
 									r.operationGroup = ""
-									r.pathPattern = "/api/rooms/{room_id}/swaps/intents"
+									r.pathPattern = "/api/rooms/{room_id}/swaps/intents/{target_player_id}"
 									r.args = args
-									r.count = 1
+									r.count = 2
 									return r, true
 								default:
 									return
 								}
-							}
-							switch elem[0] {
-							case '/': // Prefix: "/"
-
-								if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
-									elem = elem[l:]
-								} else {
-									break
-								}
-
-								// Param: "target_player_id"
-								// Leaf parameter, slashes are prohibited
-								idx := strings.IndexByte(elem, '/')
-								if idx >= 0 {
-									break
-								}
-								args[1] = elem
-								elem = ""
-
-								if len(elem) == 0 {
-									// Leaf node.
-									switch method {
-									case "DELETE":
-										r.name = DeleteSwapIntentOperation
-										r.summary = "Cancel swap intent by target player ID"
-										r.operationID = "deleteSwapIntent"
-										r.operationGroup = ""
-										r.pathPattern = "/api/rooms/{room_id}/swaps/intents/{target_player_id}"
-										r.args = args
-										r.count = 2
-										return r, true
-									default:
-										return
-									}
-								}
-
 							}
 
 						}

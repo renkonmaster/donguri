@@ -114,12 +114,18 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
-  /api/rooms/{room_id}/swaps/intents:
-    post:
-      summary: Set swap intent ON by target player ID
-      operationId: createSwapIntent
+  /api/rooms/{room_id}/connections/{target_id}:
+    put:
+      summary: Upsert connection intent by target player ID
+      operationId: putConnection
       parameters:
         - name: room_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: target_id
           in: path
           required: true
           schema:
@@ -136,14 +142,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/SwapIntentRequest"
+              $ref: "#/components/schemas/ConnectionRequest"
       responses:
         "200":
           description: Intent accepted or swap resolved
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SwapIntentResponse"
+                $ref: "#/components/schemas/ConnectionResponse"
         "default":
           description: Error response
           content:
@@ -432,16 +438,15 @@ components:
         - lat
         - lng
 
-    SwapIntentRequest:
+    ConnectionRequest:
       type: object
       properties:
-        target_player_id:
-          type: string
-          format: uuid
+        needs_swap:
+          type: boolean
       required:
-        - target_player_id
+        - needs_swap
 
-    SwapIntentResponse:
+    ConnectionResponse:
       type: object
       properties:
         matched:
