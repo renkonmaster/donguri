@@ -15,6 +15,48 @@ func (s *ErrorStatusCode) Error() string {
 	return fmt.Sprintf("code %d: %+v", s.StatusCode, s.Response)
 }
 
+// Ref: #/components/schemas/ConnectionRequest
+type ConnectionRequest struct {
+	NeedsSwap bool `json:"needs_swap"`
+}
+
+// GetNeedsSwap returns the value of NeedsSwap.
+func (s *ConnectionRequest) GetNeedsSwap() bool {
+	return s.NeedsSwap
+}
+
+// SetNeedsSwap sets the value of NeedsSwap.
+func (s *ConnectionRequest) SetNeedsSwap(val bool) {
+	s.NeedsSwap = val
+}
+
+// Ref: #/components/schemas/ConnectionResponse
+type ConnectionResponse struct {
+	// True when both sides were ON and swap executed.
+	Matched    bool       `json:"matched"`
+	RoomStatus RoomStatus `json:"room_status"`
+}
+
+// GetMatched returns the value of Matched.
+func (s *ConnectionResponse) GetMatched() bool {
+	return s.Matched
+}
+
+// GetRoomStatus returns the value of RoomStatus.
+func (s *ConnectionResponse) GetRoomStatus() RoomStatus {
+	return s.RoomStatus
+}
+
+// SetMatched sets the value of Matched.
+func (s *ConnectionResponse) SetMatched(val bool) {
+	s.Matched = val
+}
+
+// SetRoomStatus sets the value of RoomStatus.
+func (s *ConnectionResponse) SetRoomStatus(val RoomStatus) {
+	s.RoomStatus = val
+}
+
 // Ref: #/components/schemas/CreateMessageRequest
 type CreateMessageRequest struct {
 	ReceiverID uuid.UUID `json:"receiver_id"`
@@ -682,46 +724,4 @@ func (s SubscribeRoomStreamOK) Read(p []byte) (n int, err error) {
 		return 0, io.EOF
 	}
 	return s.Data.Read(p)
-}
-
-// Ref: #/components/schemas/SwapIntentRequest
-type SwapIntentRequest struct {
-	TargetPlayerID uuid.UUID `json:"target_player_id"`
-}
-
-// GetTargetPlayerID returns the value of TargetPlayerID.
-func (s *SwapIntentRequest) GetTargetPlayerID() uuid.UUID {
-	return s.TargetPlayerID
-}
-
-// SetTargetPlayerID sets the value of TargetPlayerID.
-func (s *SwapIntentRequest) SetTargetPlayerID(val uuid.UUID) {
-	s.TargetPlayerID = val
-}
-
-// Ref: #/components/schemas/SwapIntentResponse
-type SwapIntentResponse struct {
-	// True when both sides were ON and swap executed.
-	Matched    bool       `json:"matched"`
-	RoomStatus RoomStatus `json:"room_status"`
-}
-
-// GetMatched returns the value of Matched.
-func (s *SwapIntentResponse) GetMatched() bool {
-	return s.Matched
-}
-
-// GetRoomStatus returns the value of RoomStatus.
-func (s *SwapIntentResponse) GetRoomStatus() RoomStatus {
-	return s.RoomStatus
-}
-
-// SetMatched sets the value of Matched.
-func (s *SwapIntentResponse) SetMatched(val bool) {
-	s.Matched = val
-}
-
-// SetRoomStatus sets the value of RoomStatus.
-func (s *SwapIntentResponse) SetRoomStatus(val RoomStatus) {
-	s.RoomStatus = val
 }
