@@ -9,11 +9,14 @@ import (
 	"github.com/go-faster/errors"
 	"github.com/go-faster/jx"
 	ht "github.com/ogen-go/ogen/http"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
-func encodeCreateMessageResponse(response *Message, w http.ResponseWriter) error {
+func encodeCreateMessageResponse(response *Message, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(201)
+	span.SetStatus(codes.Ok, http.StatusText(201))
 
 	e := new(jx.Encoder)
 	response.Encode(e)
@@ -24,17 +27,10 @@ func encodeCreateMessageResponse(response *Message, w http.ResponseWriter) error
 	return nil
 }
 
-func encodeDeleteMyDirectionalIntentResponse(response *DirectionalIntentResponse, w http.ResponseWriter) error {
-	if err := func() error {
-		if err := response.Validate(); err != nil {
-			return err
-		}
-		return nil
-	}(); err != nil {
-		return errors.Wrap(err, "validate")
-	}
+func encodeDeleteMyDirectionalIntentResponse(response *DirectionalIntentResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
 
 	e := new(jx.Encoder)
 	response.Encode(e)
@@ -45,9 +41,10 @@ func encodeDeleteMyDirectionalIntentResponse(response *DirectionalIntentResponse
 	return nil
 }
 
-func encodeDeleteSwapIntentResponse(response *DeleteSwapIntentResponse, w http.ResponseWriter) error {
+func encodeDeleteSwapIntentResponse(response *DeleteSwapIntentResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
 
 	e := new(jx.Encoder)
 	response.Encode(e)
@@ -58,17 +55,10 @@ func encodeDeleteSwapIntentResponse(response *DeleteSwapIntentResponse, w http.R
 	return nil
 }
 
-func encodeGetMessagesResponse(response []Message, w http.ResponseWriter) error {
-	if err := func() error {
-		if response == nil {
-			return errors.New("nil is invalid value")
-		}
-		return nil
-	}(); err != nil {
-		return errors.Wrap(err, "validate")
-	}
+func encodeGetMessagesResponse(response []Message, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
 
 	e := new(jx.Encoder)
 	e.ArrStart()
@@ -83,17 +73,10 @@ func encodeGetMessagesResponse(response []Message, w http.ResponseWriter) error 
 	return nil
 }
 
-func encodeGetRoomResponse(response *RoomStateResponse, w http.ResponseWriter) error {
-	if err := func() error {
-		if err := response.Validate(); err != nil {
-			return err
-		}
-		return nil
-	}(); err != nil {
-		return errors.Wrap(err, "validate")
-	}
+func encodeGetRoomResponse(response *RoomStateResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
 
 	e := new(jx.Encoder)
 	response.Encode(e)
@@ -104,9 +87,24 @@ func encodeGetRoomResponse(response *RoomStateResponse, w http.ResponseWriter) e
 	return nil
 }
 
-func encodeJoinRoomResponse(response *JoinRoomResponse, w http.ResponseWriter) error {
+func encodeGetRoomIntersectionsResponse(response *RoomIntersectionsResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeJoinRoomResponse(response *JoinRoomResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(202)
+	span.SetStatus(codes.Ok, http.StatusText(202))
 
 	e := new(jx.Encoder)
 	response.Encode(e)
@@ -117,17 +115,10 @@ func encodeJoinRoomResponse(response *JoinRoomResponse, w http.ResponseWriter) e
 	return nil
 }
 
-func encodePatchMyDirectionalIntentResponse(response *DirectionalIntentResponse, w http.ResponseWriter) error {
-	if err := func() error {
-		if err := response.Validate(); err != nil {
-			return err
-		}
-		return nil
-	}(); err != nil {
-		return errors.Wrap(err, "validate")
-	}
+func encodePatchMyDirectionalIntentResponse(response *DirectionalIntentResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
 
 	e := new(jx.Encoder)
 	response.Encode(e)
@@ -138,9 +129,10 @@ func encodePatchMyDirectionalIntentResponse(response *DirectionalIntentResponse,
 	return nil
 }
 
-func encodePingResponse(response PingOK, w http.ResponseWriter) error {
+func encodePingResponse(response PingOK, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
 
 	writer := w
 	if closer, ok := response.Data.(io.Closer); ok {
@@ -153,17 +145,10 @@ func encodePingResponse(response PingOK, w http.ResponseWriter) error {
 	return nil
 }
 
-func encodePutConnectionResponse(response *ConnectionResponse, w http.ResponseWriter) error {
-	if err := func() error {
-		if err := response.Validate(); err != nil {
-			return err
-		}
-		return nil
-	}(); err != nil {
-		return errors.Wrap(err, "validate")
-	}
+func encodePutConnectionResponse(response *ConnectionResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
 
 	e := new(jx.Encoder)
 	response.Encode(e)
@@ -174,9 +159,10 @@ func encodePutConnectionResponse(response *ConnectionResponse, w http.ResponseWr
 	return nil
 }
 
-func encodeSubscribeRoomStreamResponse(response SubscribeRoomStreamOK, w http.ResponseWriter) error {
+func encodeSubscribeRoomStreamResponse(response SubscribeRoomStreamOK, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
 
 	writer := w
 	if closer, ok := response.Data.(io.Closer); ok {
@@ -189,7 +175,7 @@ func encodeSubscribeRoomStreamResponse(response SubscribeRoomStreamOK, w http.Re
 	return nil
 }
 
-func encodeErrorResponse(response *ErrorStatusCode, w http.ResponseWriter) error {
+func encodeErrorResponse(response *ErrorStatusCode, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	code := response.StatusCode
 	if code == 0 {
@@ -197,6 +183,11 @@ func encodeErrorResponse(response *ErrorStatusCode, w http.ResponseWriter) error
 		code = http.StatusOK
 	}
 	w.WriteHeader(code)
+	if st := http.StatusText(code); code >= http.StatusBadRequest {
+		span.SetStatus(codes.Error, st)
+	} else {
+		span.SetStatus(codes.Ok, st)
+	}
 
 	e := new(jx.Encoder)
 	response.Response.Encode(e)
