@@ -122,11 +122,6 @@ func (h *Handler) GetRoom(ctx context.Context, params api.GetRoomParams) (*api.R
 	panic("unimplemented")
 }
 
-// JoinRoom implements [api.Handler].
-func (h *Handler) JoinRoom(ctx context.Context, req *api.JoinRoomRequest) (*api.JoinRoomResponse, error) {
-	panic("unimplemented")
-}
-
 // PatchMyDirectionalIntent implements [api.Handler].
 func (h *Handler) PatchMyDirectionalIntent(ctx context.Context, req *api.DirectionalIntentRequest, params api.PatchMyDirectionalIntentParams) (*api.DirectionalIntentResponse, error) {
 	panic("unimplemented")
