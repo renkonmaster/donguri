@@ -1,5 +1,6 @@
 export type MapPoint = {
   id: string;
+  orderIndex: number;
   lat: number;
   lng: number;
   name?: string;

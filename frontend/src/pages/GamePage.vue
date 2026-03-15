@@ -15,6 +15,8 @@ const playerId = route.query.player_id as string;
 const roomStatus = ref<'matching' | 'playing' | 'finished'>('matching');
 const players = ref<Player[]>([]);
 const messages = ref<Message[]>([]);
+const countdownSeconds = ref<number | null>(null);
+let countdownTimer: ReturnType<typeof setInterval> | null = null;
 
 type ApiPlayer = {
   id: string;
@@ -33,6 +35,8 @@ function mapPlayer(p: ApiPlayer): Player {
   };
 }
 
+const maxPlayersPerRoom = 4;
+
 async function fetchRoomState() {
   const res = await fetch(`/api/rooms/${roomId}`, {
     headers: { 'X-Player-ID': playerId },
@@ -44,10 +48,27 @@ async function fetchRoomState() {
   };
   roomStatus.value = data.status;
   players.value = data.players.map(mapPlayer);
+
+  if (data.status === 'matching' && data.players.length === maxPlayersPerRoom && countdownTimer === null) {
+    startCountdown();
+  }
+}
+
+function startCountdown() {
+  countdownSeconds.value = 5;
+  countdownTimer = setInterval(() => {
+    if (countdownSeconds.value === null || countdownSeconds.value <= 1) {
+      clearInterval(countdownTimer!);
+      countdownTimer = null;
+      countdownSeconds.value = null;
+      return;
+    }
+    countdownSeconds.value--;
+  }, 1000);
 }
 
 const matchingPoints = computed(() =>
-  players.value.map(p => ({ id: p.id, lat: p.lat, lng: p.lng, name: p.name })),
+  players.value.map(p => ({ id: p.id, orderIndex: p.orderIndex, lat: p.lat, lng: p.lng, name: p.name })),
 );
 
 let sse: EventSource | null = null;
@@ -60,6 +81,11 @@ onMounted(async () => {
   await fetchRoomState();
   sse = new EventSource(`/api/rooms/${roomId}/stream?player_id=${playerId}`);
   sse.addEventListener('room_started', () => {
+    if (countdownTimer !== null) {
+      clearInterval(countdownTimer);
+      countdownTimer = null;
+    }
+    countdownSeconds.value = null;
     void fetchRoomState();
   });
   sse.addEventListener('room_updated', () => {
@@ -69,6 +95,9 @@ onMounted(async () => {
 
 onUnmounted(() => {
   sse?.close();
+  if (countdownTimer !== null) {
+    clearInterval(countdownTimer);
+  }
 });
 
 function onSendMessage(receiverId: string, content: string) {
@@ -102,8 +131,9 @@ function onToggleSwap(targetPlayerId: string, needsSwap: boolean) {
       <MatchingScene
         v-else
         :my-player-id="playerId"
-        :max-count="4"
+        :max-count="maxPlayersPerRoom"
         :points="matchingPoints"
+        :countdown-seconds="countdownSeconds"
       />
     </div>
   </DefaultLayout>

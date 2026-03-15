@@ -77,7 +77,7 @@ const unreadPlayerIds = computed(() =>
 const mapPoints = computed<MapPoint[]>(() =>
   [...props.players]
     .sort((a, b) => a.orderIndex - b.orderIndex)
-    .map(p => ({ id: p.id, lat: p.lat, lng: p.lng, name: p.name })),
+    .map(p => ({ id: p.id, orderIndex: p.orderIndex, lat: p.lat, lng: p.lng, name: p.name })),
 );
 
 function onMapClick(payload: MapClickPayload) {
