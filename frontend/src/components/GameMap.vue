@@ -7,6 +7,7 @@ import type { MapPoint } from '@/types/map';
 const props = defineProps<{
   points: MapPoint[];
   highlightedId?: string;
+  showLine?: boolean;
 }>();
 
 const mapContainer = ref<HTMLDivElement | null>(null);
@@ -69,7 +70,7 @@ function toPointsGeoJSON(points: MapPoint[], highlightedId: string | undefined):
       return {
         type: 'Feature',
         geometry: { type: 'Point', coordinates: [p.lng, p.lat] },
-        properties: { id: p.id, r, g, b, role },
+        properties: { id: p.id, r, g, b, role, name: p.name ?? '' },
       };
     }),
   };
@@ -139,6 +140,15 @@ function toLineGeoJSON(points: MapPoint[], highlightedId: string | undefined): G
 }
 
 watch(
+  () => props.showLine,
+  (showLine) => {
+    const visibility = (showLine ?? true) ? 'visible' : 'none';
+    map?.setLayoutProperty('line-outline', 'visibility', visibility);
+    map?.setLayoutProperty('line', 'visibility', visibility);
+  },
+);
+
+watch(
   [() => props.points, () => props.highlightedId],
   ([points, highlightedId]) => {
     // getSource() の戻り値は Source 基底型で setData を持たないため、GeoJSONSource にキャストする
@@ -205,6 +215,10 @@ onMounted(() => {
       },
     });
 
+    const lineVisibility = (props.showLine ?? true) ? 'visible' : 'none';
+    m.setLayoutProperty('line-outline', 'visibility', lineVisibility);
+    m.setLayoutProperty('line', 'visibility', lineVisibility);
+
     m.addLayer({
       id: 'points-circle',
       type: 'circle',
@@ -215,6 +229,24 @@ onMounted(() => {
         'circle-stroke-width': ['match', ['get', 'role'], 'highlight', 4, 'adjacent', 3, 2],
         'circle-stroke-color': '#111111',
         'circle-opacity': ['match', ['get', 'role'], 'normal', 0.65, 1.0],
+      },
+    });
+
+    m.addLayer({
+      id: 'points-label',
+      type: 'symbol',
+      source: POINTS_SOURCE_ID,
+      layout: {
+        'text-field': ['get', 'name'],
+        'text-font': ['Noto Sans Bold', 'Noto Sans Regular'],
+        'text-anchor': 'bottom',
+        'text-offset': [0, -1.0],
+        'text-size': ['match', ['get', 'role'], 'highlight', 20, 'adjacent', 17, 15],
+      },
+      paint: {
+        'text-color': ['rgb', ['get', 'r'], ['get', 'g'], ['get', 'b']],
+        'text-halo-color': '#111111',
+        'text-halo-width': ['match', ['get', 'role'], 'highlight', 2, 1],
       },
     });
   });
