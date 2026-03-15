@@ -107,6 +107,10 @@ func (h *Handler) scheduleGameStart(roomID uuid.UUID) {
 		return
 	}
 
+	if err := h.repo.ShufflePlayerOrderIndices(ctx, roomID); err != nil {
+		slog.Error("scheduleGameStart: failed to shuffle player order indices", "room_id", roomID, "error", err)
+	}
+
 	if payload, marshalErr := json.Marshal(map[string]any{"room_id": roomID}); marshalErr == nil {
 		h.publishRoomEvent(roomID, "room_started", payload)
 	}
