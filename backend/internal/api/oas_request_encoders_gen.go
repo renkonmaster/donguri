@@ -10,8 +10,64 @@ import (
 	ht "github.com/ogen-go/ogen/http"
 )
 
-func encodeCreateUserRequest(
-	req *CreateUserReq,
+func encodeCreateMessageRequest(
+	req *CreateMessageRequest,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeCreateSwapIntentRequest(
+	req *SwapIntentRequest,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeDeleteMyDirectionalIntentRequest(
+	req *DirectionalIntentRequest,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeJoinRoomRequest(
+	req *JoinRoomRequest,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodePatchMyDirectionalIntentRequest(
+	req *DirectionalIntentRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"

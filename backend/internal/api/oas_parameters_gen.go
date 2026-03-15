@@ -15,24 +15,33 @@ import (
 	"github.com/ogen-go/ogen/validate"
 )
 
-// GetUserParams is parameters of getUser operation.
-type GetUserParams struct {
-	UserID uuid.UUID
+// CreateMessageParams is parameters of createMessage operation.
+type CreateMessageParams struct {
+	RoomID    uuid.UUID
+	XPlayerID uuid.UUID
 }
 
-func unpackGetUserParams(packed middleware.Parameters) (params GetUserParams) {
+func unpackCreateMessageParams(packed middleware.Parameters) (params CreateMessageParams) {
 	{
 		key := middleware.ParameterKey{
-			Name: "userID",
+			Name: "room_id",
 			In:   "path",
 		}
-		params.UserID = packed[key].(uuid.UUID)
+		params.RoomID = packed[key].(uuid.UUID)
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "X-Player-ID",
+			In:   "header",
+		}
+		params.XPlayerID = packed[key].(uuid.UUID)
 	}
 	return params
 }
 
-func decodeGetUserParams(args [1]string, argsEscaped bool, r *http.Request) (params GetUserParams, _ error) {
-	// Decode path: userID.
+func decodeCreateMessageParams(args [1]string, argsEscaped bool, r *http.Request) (params CreateMessageParams, _ error) {
+	h := uri.NewHeaderDecoder(r.Header)
+	// Decode path: room_id.
 	if err := func() error {
 		param := args[0]
 		if argsEscaped {
@@ -44,7 +53,7 @@ func decodeGetUserParams(args [1]string, argsEscaped bool, r *http.Request) (par
 		}
 		if len(param) > 0 {
 			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "userID",
+				Param:   "room_id",
 				Value:   param,
 				Style:   uri.PathStyleSimple,
 				Explode: false,
@@ -61,7 +70,7 @@ func decodeGetUserParams(args [1]string, argsEscaped bool, r *http.Request) (par
 					return err
 				}
 
-				params.UserID = c
+				params.RoomID = c
 				return nil
 			}(); err != nil {
 				return err
@@ -72,8 +81,860 @@ func decodeGetUserParams(args [1]string, argsEscaped bool, r *http.Request) (par
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "userID",
+			Name: "room_id",
 			In:   "path",
+			Err:  err,
+		}
+	}
+	// Decode header: X-Player-ID.
+	if err := func() error {
+		cfg := uri.HeaderParameterDecodingConfig{
+			Name:    "X-Player-ID",
+			Explode: false,
+		}
+		if err := h.HasParam(cfg); err == nil {
+			if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToUUID(val)
+				if err != nil {
+					return err
+				}
+
+				params.XPlayerID = c
+				return nil
+			}); err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "X-Player-ID",
+			In:   "header",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// CreateSwapIntentParams is parameters of createSwapIntent operation.
+type CreateSwapIntentParams struct {
+	RoomID    uuid.UUID
+	XPlayerID uuid.UUID
+}
+
+func unpackCreateSwapIntentParams(packed middleware.Parameters) (params CreateSwapIntentParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "room_id",
+			In:   "path",
+		}
+		params.RoomID = packed[key].(uuid.UUID)
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "X-Player-ID",
+			In:   "header",
+		}
+		params.XPlayerID = packed[key].(uuid.UUID)
+	}
+	return params
+}
+
+func decodeCreateSwapIntentParams(args [1]string, argsEscaped bool, r *http.Request) (params CreateSwapIntentParams, _ error) {
+	h := uri.NewHeaderDecoder(r.Header)
+	// Decode path: room_id.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "room_id",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToUUID(val)
+				if err != nil {
+					return err
+				}
+
+				params.RoomID = c
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "room_id",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	// Decode header: X-Player-ID.
+	if err := func() error {
+		cfg := uri.HeaderParameterDecodingConfig{
+			Name:    "X-Player-ID",
+			Explode: false,
+		}
+		if err := h.HasParam(cfg); err == nil {
+			if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToUUID(val)
+				if err != nil {
+					return err
+				}
+
+				params.XPlayerID = c
+				return nil
+			}); err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "X-Player-ID",
+			In:   "header",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// DeleteMyDirectionalIntentParams is parameters of deleteMyDirectionalIntent operation.
+type DeleteMyDirectionalIntentParams struct {
+	RoomID    uuid.UUID
+	XPlayerID uuid.UUID
+}
+
+func unpackDeleteMyDirectionalIntentParams(packed middleware.Parameters) (params DeleteMyDirectionalIntentParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "room_id",
+			In:   "path",
+		}
+		params.RoomID = packed[key].(uuid.UUID)
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "X-Player-ID",
+			In:   "header",
+		}
+		params.XPlayerID = packed[key].(uuid.UUID)
+	}
+	return params
+}
+
+func decodeDeleteMyDirectionalIntentParams(args [1]string, argsEscaped bool, r *http.Request) (params DeleteMyDirectionalIntentParams, _ error) {
+	h := uri.NewHeaderDecoder(r.Header)
+	// Decode path: room_id.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "room_id",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToUUID(val)
+				if err != nil {
+					return err
+				}
+
+				params.RoomID = c
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "room_id",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	// Decode header: X-Player-ID.
+	if err := func() error {
+		cfg := uri.HeaderParameterDecodingConfig{
+			Name:    "X-Player-ID",
+			Explode: false,
+		}
+		if err := h.HasParam(cfg); err == nil {
+			if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToUUID(val)
+				if err != nil {
+					return err
+				}
+
+				params.XPlayerID = c
+				return nil
+			}); err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "X-Player-ID",
+			In:   "header",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// DeleteSwapIntentParams is parameters of deleteSwapIntent operation.
+type DeleteSwapIntentParams struct {
+	RoomID         uuid.UUID
+	TargetPlayerID uuid.UUID
+	XPlayerID      uuid.UUID
+}
+
+func unpackDeleteSwapIntentParams(packed middleware.Parameters) (params DeleteSwapIntentParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "room_id",
+			In:   "path",
+		}
+		params.RoomID = packed[key].(uuid.UUID)
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "target_player_id",
+			In:   "path",
+		}
+		params.TargetPlayerID = packed[key].(uuid.UUID)
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "X-Player-ID",
+			In:   "header",
+		}
+		params.XPlayerID = packed[key].(uuid.UUID)
+	}
+	return params
+}
+
+func decodeDeleteSwapIntentParams(args [2]string, argsEscaped bool, r *http.Request) (params DeleteSwapIntentParams, _ error) {
+	h := uri.NewHeaderDecoder(r.Header)
+	// Decode path: room_id.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "room_id",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToUUID(val)
+				if err != nil {
+					return err
+				}
+
+				params.RoomID = c
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "room_id",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	// Decode path: target_player_id.
+	if err := func() error {
+		param := args[1]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[1])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "target_player_id",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToUUID(val)
+				if err != nil {
+					return err
+				}
+
+				params.TargetPlayerID = c
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "target_player_id",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	// Decode header: X-Player-ID.
+	if err := func() error {
+		cfg := uri.HeaderParameterDecodingConfig{
+			Name:    "X-Player-ID",
+			Explode: false,
+		}
+		if err := h.HasParam(cfg); err == nil {
+			if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToUUID(val)
+				if err != nil {
+					return err
+				}
+
+				params.XPlayerID = c
+				return nil
+			}); err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "X-Player-ID",
+			In:   "header",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// GetMessagesParams is parameters of getMessages operation.
+type GetMessagesParams struct {
+	RoomID    uuid.UUID
+	XPlayerID uuid.UUID
+}
+
+func unpackGetMessagesParams(packed middleware.Parameters) (params GetMessagesParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "room_id",
+			In:   "path",
+		}
+		params.RoomID = packed[key].(uuid.UUID)
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "X-Player-ID",
+			In:   "header",
+		}
+		params.XPlayerID = packed[key].(uuid.UUID)
+	}
+	return params
+}
+
+func decodeGetMessagesParams(args [1]string, argsEscaped bool, r *http.Request) (params GetMessagesParams, _ error) {
+	h := uri.NewHeaderDecoder(r.Header)
+	// Decode path: room_id.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "room_id",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToUUID(val)
+				if err != nil {
+					return err
+				}
+
+				params.RoomID = c
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "room_id",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	// Decode header: X-Player-ID.
+	if err := func() error {
+		cfg := uri.HeaderParameterDecodingConfig{
+			Name:    "X-Player-ID",
+			Explode: false,
+		}
+		if err := h.HasParam(cfg); err == nil {
+			if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToUUID(val)
+				if err != nil {
+					return err
+				}
+
+				params.XPlayerID = c
+				return nil
+			}); err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "X-Player-ID",
+			In:   "header",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// GetRoomParams is parameters of getRoom operation.
+type GetRoomParams struct {
+	RoomID    uuid.UUID
+	XPlayerID uuid.UUID
+}
+
+func unpackGetRoomParams(packed middleware.Parameters) (params GetRoomParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "room_id",
+			In:   "path",
+		}
+		params.RoomID = packed[key].(uuid.UUID)
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "X-Player-ID",
+			In:   "header",
+		}
+		params.XPlayerID = packed[key].(uuid.UUID)
+	}
+	return params
+}
+
+func decodeGetRoomParams(args [1]string, argsEscaped bool, r *http.Request) (params GetRoomParams, _ error) {
+	h := uri.NewHeaderDecoder(r.Header)
+	// Decode path: room_id.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "room_id",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToUUID(val)
+				if err != nil {
+					return err
+				}
+
+				params.RoomID = c
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "room_id",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	// Decode header: X-Player-ID.
+	if err := func() error {
+		cfg := uri.HeaderParameterDecodingConfig{
+			Name:    "X-Player-ID",
+			Explode: false,
+		}
+		if err := h.HasParam(cfg); err == nil {
+			if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToUUID(val)
+				if err != nil {
+					return err
+				}
+
+				params.XPlayerID = c
+				return nil
+			}); err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "X-Player-ID",
+			In:   "header",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// PatchMyDirectionalIntentParams is parameters of patchMyDirectionalIntent operation.
+type PatchMyDirectionalIntentParams struct {
+	RoomID    uuid.UUID
+	XPlayerID uuid.UUID
+}
+
+func unpackPatchMyDirectionalIntentParams(packed middleware.Parameters) (params PatchMyDirectionalIntentParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "room_id",
+			In:   "path",
+		}
+		params.RoomID = packed[key].(uuid.UUID)
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "X-Player-ID",
+			In:   "header",
+		}
+		params.XPlayerID = packed[key].(uuid.UUID)
+	}
+	return params
+}
+
+func decodePatchMyDirectionalIntentParams(args [1]string, argsEscaped bool, r *http.Request) (params PatchMyDirectionalIntentParams, _ error) {
+	h := uri.NewHeaderDecoder(r.Header)
+	// Decode path: room_id.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "room_id",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToUUID(val)
+				if err != nil {
+					return err
+				}
+
+				params.RoomID = c
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "room_id",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	// Decode header: X-Player-ID.
+	if err := func() error {
+		cfg := uri.HeaderParameterDecodingConfig{
+			Name:    "X-Player-ID",
+			Explode: false,
+		}
+		if err := h.HasParam(cfg); err == nil {
+			if err := h.DecodeParam(cfg, func(d uri.Decoder) error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToUUID(val)
+				if err != nil {
+					return err
+				}
+
+				params.XPlayerID = c
+				return nil
+			}); err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "X-Player-ID",
+			In:   "header",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// SubscribeRoomStreamParams is parameters of subscribeRoomStream operation.
+type SubscribeRoomStreamParams struct {
+	RoomID   uuid.UUID
+	PlayerID OptUUID `json:",omitempty,omitzero"`
+}
+
+func unpackSubscribeRoomStreamParams(packed middleware.Parameters) (params SubscribeRoomStreamParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "room_id",
+			In:   "path",
+		}
+		params.RoomID = packed[key].(uuid.UUID)
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "player_id",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.PlayerID = v.(OptUUID)
+		}
+	}
+	return params
+}
+
+func decodeSubscribeRoomStreamParams(args [1]string, argsEscaped bool, r *http.Request) (params SubscribeRoomStreamParams, _ error) {
+	q := uri.NewQueryDecoder(r.URL.Query())
+	// Decode path: room_id.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "room_id",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToUUID(val)
+				if err != nil {
+					return err
+				}
+
+				params.RoomID = c
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "room_id",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	// Decode query: player_id.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "player_id",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotPlayerIDVal uuid.UUID
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToUUID(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotPlayerIDVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.PlayerID.SetTo(paramsDotPlayerIDVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "player_id",
+			In:   "query",
 			Err:  err,
 		}
 	}

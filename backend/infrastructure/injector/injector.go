@@ -4,15 +4,13 @@ import (
 	"github.com/renkonmaster/donguri/internal/api"
 	"github.com/renkonmaster/donguri/internal/handler"
 	"github.com/renkonmaster/donguri/internal/repository"
-	photo_service "github.com/renkonmaster/donguri/internal/service/photo"
 
-	"github.com/jmoiron/sqlx"
+	"gorm.io/gorm"
 )
 
-func InjectServer(db *sqlx.DB) (*api.Server, error) {
-	photo := photo_service.NewPhotoService()
+func InjectServer(db *gorm.DB) (*api.Server, error) {
 	repo := repository.New(db)
-	h := handler.New(photo, repo)
+	h := handler.New(repo)
 
 	s, err := api.NewServer(h)
 	if err != nil {
