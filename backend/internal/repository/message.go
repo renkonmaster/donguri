@@ -80,7 +80,7 @@ func (r *Repository) GetMessagesRelatedToPlayer(ctx context.Context, roomID, pla
 
 	if err := r.db.WithContext(ctx).
 		Where("room_id = ?", roomID).
-		Where("sender_id = ? OR receiver_id = ?", playerID, playerID).
+		Where("(sender_id = ? OR receiver_id = ?)", playerID, playerID).
 		Order("created_at ASC").
 		Order("id ASC").
 		Find(&messages).Error; err != nil {
