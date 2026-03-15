@@ -1,6 +1,6 @@
 # InterKnot
 
-&copy; 2026 renkon, TwoSquirrels, nyson411, ri226ku
+&copy; 2026 renkon, TwoSquirrels, nyson411, ri226ku  
 License: [MIT License](LICENSE)
 
 三大学合同ハッカソンＡ班「チームどんぐり」による Web ゲームのリポジトリです。
