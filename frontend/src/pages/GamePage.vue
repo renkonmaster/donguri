@@ -15,8 +15,8 @@ useOgpHead(
   'InterKnotのゲームページです。マッチング状況や参加者の位置情報を確認できます。',
 );
 
-const roomId = route.query.room_id as string;
-const playerId = route.query.player_id as string;
+const roomId = typeof route.query.room_id === 'string' ? route.query.room_id : '';
+const playerId = typeof route.query.player_id === 'string' ? route.query.player_id : '';
 
 const roomStatus = ref<'matching' | 'playing' | 'finished'>('matching');
 const players = ref<Player[]>([]);
@@ -35,7 +35,7 @@ watch(roomStatus, (newStatus) => {
   if (newStatus === 'finished' && clearTimeMs.value === null) {
     clearTimeMs.value = gameStartTime.value !== null ? Date.now() - gameStartTime.value : null;
   }
-}, { immediate: true });
+}, { flush: 'sync' });
 
 type ApiPlayer = {
   id: string;
@@ -105,7 +105,7 @@ onMounted(async () => {
   await fetchRoomState();
   sse = new EventSource(`/api/rooms/${roomId}/stream?player_id=${playerId}`);
   sse.addEventListener('message_received', (e: MessageEvent) => {
-    const data = JSON.parse(e.data as string) as {
+    const data = JSON.parse(e.data) as unknown as {
       id: string;
       sender_id: string;
       receiver_id: string;
@@ -141,7 +141,7 @@ onUnmounted(() => {
 });
 
 async function onSendMessage(receiverId: string, content: string) {
-  await fetch(`/api/rooms/${roomId}/messages`, {
+  const res = await fetch(`/api/rooms/${roomId}/messages`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -149,7 +149,8 @@ async function onSendMessage(receiverId: string, content: string) {
     },
     body: JSON.stringify({ receiver_id: receiverId, content }),
   });
-  // メッセージは SSE の message_received イベントで追加される
+  if (!res.ok) return;
+  // メッセージの追加は SSE の message_received イベントで行われる
 }
 
 async function onToggleSwap(targetPlayerId: string, needsSwap: boolean) {
@@ -162,16 +163,10 @@ async function onToggleSwap(targetPlayerId: string, needsSwap: boolean) {
     body: JSON.stringify({ needs_swap: needsSwap }),
   });
   if (!res.ok) return;
-  const data = await res.json() as { matched: boolean; room_status: string };
+  const data = await res.json() as unknown as { matched: boolean };
   if (data.matched) {
     swapCount.value++;
-    void fetchRoomState();
-  }
-  if (data.room_status === 'finished') {
-    if (clearTimeMs.value === null && gameStartTime.value !== null) {
-      clearTimeMs.value = Date.now() - gameStartTime.value;
-    }
-    roomStatus.value = 'finished';
+    // ルーム状態の更新は SSE の room_updated イベント経由で行われる
   }
 }
 </script>

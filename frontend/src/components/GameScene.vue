@@ -53,19 +53,17 @@ const currentMessages = computed(() => {
   );
 });
 
-// players の orderIndex が変化した (= スワップ成立) ときに swapRequested をクリアする
+// orderIndex が変化した (= スワップ成立) プレイヤーの swapRequested をクリアする
 watch(
-  () => props.players.map(p => ({ id: p.id, orderIndex: p.orderIndex })),
-  (newVal, oldVal) => {
-    if (!oldVal) return;
-    for (const newP of newVal) {
-      const oldP = oldVal.find(p => p.id === newP.id);
+  () => props.players,
+  (newPlayers, oldPlayers) => {
+    for (const newP of newPlayers) {
+      const oldP = oldPlayers?.find(p => p.id === newP.id);
       if (oldP && oldP.orderIndex !== newP.orderIndex) {
         swapRequested.delete(newP.id);
       }
     }
   },
-  { deep: true },
 );
 
 // playerId → その会話で既読済みの inbound (相手→自分) メッセージ件数
@@ -92,11 +90,13 @@ const unreadPlayerIds = computed(() =>
     .map(p => p.id),
 );
 
+const sortedPlayers = computed(() =>
+  [...props.players].sort((a, b) => a.orderIndex - b.orderIndex),
+);
+
 // GameMap は order_index 順に並んだ MapPoint[] を受け取る
 const mapPoints = computed<MapPoint[]>(() =>
-  [...props.players]
-    .sort((a, b) => a.orderIndex - b.orderIndex)
-    .map(p => ({ id: p.id, orderIndex: p.orderIndex, lat: p.lat, lng: p.lng, name: p.name })),
+  sortedPlayers.value.map(p => ({ id: p.id, orderIndex: p.orderIndex, lat: p.lat, lng: p.lng, name: p.name })),
 );
 
 const formattedClearTime = computed(() => {
@@ -242,7 +242,7 @@ function onToggleSwap() {
             </p>
             <div class="flex flex-wrap gap-1.5">
               <span
-                v-for="p in [...players].sort((a, b) => a.orderIndex - b.orderIndex)"
+                v-for="p in sortedPlayers"
                 :key="p.id"
                 class="rounded-full px-3 py-1 text-sm font-semibold text-white"
                 :style="playerBadgeStyle(p)"

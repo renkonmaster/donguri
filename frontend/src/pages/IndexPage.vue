@@ -68,7 +68,8 @@ async function startMatching() {
     }
     const data = await res.json() as { room_id: string; player_id: string };
     await router.push({ path: '/game', query: { room_id: data.room_id, player_id: data.player_id } });
-  } catch (e) {
+  }
+  catch (e) {
     errorMessage.value = e instanceof Error ? e.message : 'エラーが発生しました';
     loading.value = false;
   }
