@@ -342,4 +342,11 @@ onUnmounted(() => {
   animation: unread-ping 0.5s linear infinite;
   pointer-events: none;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .unread-pulse-ring {
+    animation: none;
+    opacity: 0.6;
+  }
+}
 </style>

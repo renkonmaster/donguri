@@ -23,7 +23,9 @@ const me = computed(() => props.players.find(p => p.id === props.myPlayerId));
 
 function isAdjacent(player: Player): boolean {
   if (!me.value) return false;
-  return Math.abs(player.orderIndex - me.value.orderIndex) === 1;
+  const n = props.players.length;
+  const diff = Math.abs(player.orderIndex - me.value.orderIndex);
+  return diff === 1 || diff === n - 1;
 }
 
 const selectedPlayer = computed(() =>
@@ -47,24 +49,26 @@ const currentMessages = computed(() => {
   );
 });
 
-// playerId → その会話で既読済みのメッセージ数
+// playerId → その会話で既読済みの inbound (相手→自分) メッセージ件数
 const seenCount = reactive(new Map<string, number>());
 
-// オーバーレイが開いている間・新着が届いた瞬間も既読にする
+// オーバーレイが開いている間・新着が届いた瞬間も既読にする (inbound 件数ベース)
 watch([selectedPlayerId, currentMessages], () => {
   const id = selectedPlayerId.value;
-  if (id) seenCount.set(id, currentMessages.value.length);
+  if (id) {
+    const inbound = currentMessages.value.filter(m => m.senderId === id).length;
+    seenCount.set(id, inbound);
+  }
 });
 
 const unreadPlayerIds = computed(() =>
   props.players
     .filter(p => p.id !== props.myPlayerId)
     .filter((p) => {
-      const total = props.messages.filter(
-        m => (m.senderId === p.id && m.receiverId === props.myPlayerId)
-          || (m.senderId === props.myPlayerId && m.receiverId === p.id),
+      const inbound = props.messages.filter(
+        m => m.senderId === p.id && m.receiverId === props.myPlayerId,
       ).length;
-      return total > (seenCount.get(p.id) ?? 0);
+      return inbound > (seenCount.get(p.id) ?? 0);
     })
     .map(p => p.id),
 );
