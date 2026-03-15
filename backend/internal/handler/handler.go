@@ -2,7 +2,6 @@ package handler
 
 import (
 	"context"
-	"encoding/json"
 	"log/slog"
 	"net/http"
 
@@ -26,43 +25,6 @@ func New(
 	}
 }
 
-// CreateMessage implements [api.Handler].
-func (h *Handler) CreateMessage(ctx context.Context, req *api.CreateMessageRequest, params api.CreateMessageParams) (*api.Message, error) {
-	if req == nil {
-		return nil, &api.ErrorStatusCode{
-			StatusCode: http.StatusBadRequest,
-			Response: api.Error{
-				Message: "request body is required",
-			},
-		}
-	}
-
-	entity, err := h.repo.CreateMessage(ctx, repository.CreateMessageParams{
-		RoomID:     params.RoomID,
-		SenderID:   params.XPlayerID,
-		ReceiverID: req.ReceiverID,
-		Content:    req.Content,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	message := &api.Message{
-		ID:         entity.ID,
-		RoomID:     entity.RoomID,
-		SenderID:   entity.SenderID,
-		ReceiverID: req.ReceiverID,
-		Content:    entity.Content,
-		CreatedAt:  entity.CreatedAt,
-	}
-
-	if payload, marshalErr := json.Marshal(message); marshalErr == nil {
-		h.publishRoomEvent(params.RoomID, "message_received", payload)
-	}
-
-	return message, nil
-}
-
 // DeleteMyDirectionalIntent implements [api.Handler].
 func (h *Handler) DeleteMyDirectionalIntent(ctx context.Context, req *api.DirectionalIntentRequest, params api.DeleteMyDirectionalIntentParams) (*api.DirectionalIntentResponse, error) {
 	panic("unimplemented")
@@ -70,11 +32,6 @@ func (h *Handler) DeleteMyDirectionalIntent(ctx context.Context, req *api.Direct
 
 // DeleteSwapIntent implements [api.Handler].
 func (h *Handler) DeleteSwapIntent(ctx context.Context, params api.DeleteSwapIntentParams) (*api.DeleteSwapIntentResponse, error) {
-	panic("unimplemented")
-}
-
-// GetMessages implements [api.Handler].
-func (h *Handler) GetMessages(ctx context.Context, params api.GetMessagesParams) ([]api.Message, error) {
 	panic("unimplemented")
 }
 
@@ -96,6 +53,10 @@ func (h *Handler) SubscribeRoomStream(ctx context.Context, params api.SubscribeR
 }
 
 func (h *Handler) NewError(ctx context.Context, err error) *api.ErrorStatusCode {
+	if statusErr := messageValidationError(err); statusErr != nil {
+		return statusErr
+	}
+
 	if apiErr, ok := err.(*api.ErrorStatusCode); ok {
 		return apiErr
 	}
