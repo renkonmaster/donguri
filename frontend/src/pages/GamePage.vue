@@ -11,7 +11,6 @@ type Scene = 'matching' | 'game';
 const route = useRoute();
 const scene = computed<Scene>(() => route.hash === '#matching' ? 'matching' : 'game');
 
-// ─── 仮データ ─────────────────────────────────────────────
 const myPlayerId = 'p5';
 
 const players: Player[] = [
@@ -57,13 +56,12 @@ function onToggleSwap(targetPlayerId: string, needsSwap: boolean) {
 
 <template>
   <DefaultLayout>
-    <div class="relative h-svh">
+    <div class="h-svh">
       <GameScene
         v-if="scene === 'game'"
         :my-player-id="myPlayerId"
         :players="players"
         :messages="messages"
-        class="h-full"
         @send-message="onSendMessage"
         @toggle-swap="onToggleSwap"
       />
