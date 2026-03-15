@@ -6,6 +6,10 @@ import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import communicationBg from '@/assets/communication.png';
 import phoneBg from '@/assets/phone.png';
 import logoImage from '@/assets/logo.png';
+import slide13Image from '@/assets/modal-images/Slide13.jpg';
+import slide14Image from '@/assets/modal-images/Slide14.jpg';
+import slide15Image from '@/assets/modal-images/Slide15.jpg';
+import slide16Image from '@/assets/modal-images/Slide16.jpg';
 
 const router = useRouter();
 const playerName = ref('');
@@ -40,8 +44,48 @@ useOgpHead(
 );
 
 const showRuleModal = ref(false);
+const currentRuleSlideIndex = ref(0);
+
+const ruleSlides = [
+  {
+    image: slide13Image,
+    paragraphs: [
+      'あなたの名前にハンドルネームを入力してください。',
+      'ほかのユーザーの画面にその名前が表示されます。',
+      'マッチングボタンを押して、8人集まるとゲームが始まります。',
+      '「？」を押すとゲーム説明がでてきます。',
+    ],
+  },
+  {
+    image: slide14Image,
+    paragraphs: [
+      'ゲームが始まると初期のループが描かれています。',
+      'このループに交差ができないように点をほかの人と交換していきましょう。',
+    ],
+  },
+  {
+    image: slide15Image,
+    paragraphs: [
+      'ほかの人の現在位置をタップするとメッセージ画面がでてきます。',
+      'メッセージができるのは自分と線がつながっている人のみです。',
+      '線がつながっている人からメッセージが届いた場合は右上図のようにその人に目印がつきます。',
+    ],
+  },
+  {
+    image: slide16Image,
+    paragraphs: [
+      '線がつながっている人同士は線のつながりの順番を交換することができます。上部の「交換する」ボタンを押すと「交換申請中」に代わります。相手もボタンを押し「交換申請中」になったときに交換が成立します。',
+      '相手に自分が交換申請をしていることは伝わらないので、チャットを通じて交換を成立させましょう。',
+    ],
+  },
+];
+
+const currentRuleSlide = computed(() => ruleSlides[currentRuleSlideIndex.value]);
+const isFirstRuleSlide = computed(() => currentRuleSlideIndex.value === 0);
+const isLastRuleSlide = computed(() => currentRuleSlideIndex.value === ruleSlides.length - 1);
 
 function openRuleModal() {
+  currentRuleSlideIndex.value = 0;
   showRuleModal.value = true;
 }
 
@@ -73,6 +117,25 @@ async function startMatching() {
     errorMessage.value = e instanceof Error ? e.message : 'エラーが発生しました';
     loading.value = false;
   }
+}
+
+function goToNextRuleSlide() {
+  if (isLastRuleSlide.value) {
+    closeRuleModal();
+    return;
+  }
+  currentRuleSlideIndex.value += 1;
+}
+
+function goToPrevRuleSlide() {
+  if (isFirstRuleSlide.value) {
+    return;
+  }
+  currentRuleSlideIndex.value -= 1;
+}
+
+function goToRuleSlide(index: number) {
+  currentRuleSlideIndex.value = index;
 }
 </script>
 
@@ -134,23 +197,66 @@ async function startMatching() {
 
           <div
             v-if="showRuleModal"
-            class="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/55 px-4"
             @click="closeRuleModal"
           >
             <div
-              class="relative w-full max-w-md rounded-xl bg-white p-6 shadow-lg"
+              class="relative w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl sm:p-6"
               @click.stop
             >
-              <h2 class="mb-4 text-xl font-bold">
-                ルール説明
-              </h2>
-              <ul class="mb-4 list-disc pl-5 text-left">
-                <li>プレイヤー同士でマッチングしてゲームを開始します。</li>
-                <li>ゲームの進行や操作方法は画面の指示に従ってください。</li>
-                <li>不明点があればサポートまでお問い合わせください。</li>
-              </ul>
+              <div class="mb-4 flex items-start justify-between gap-3">
+                <h2 class="text-lg font-bold text-slate-800 sm:text-xl">
+                  ゲーム説明
+                </h2>
+                <p class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 sm:text-sm">
+                  {{ currentRuleSlideIndex + 1 }} / {{ ruleSlides.length }}
+                </p>
+              </div>
+
+              <img
+                :src="currentRuleSlide.image"
+                :alt="`説明スライド ${currentRuleSlideIndex + 1}`"
+                class="mb-4 h-48 w-full rounded-xl object-cover sm:h-56"
+              >
+
+              <div class="space-y-3 text-left text-sm leading-relaxed text-slate-700 sm:text-base">
+                <p
+                  v-for="(paragraph, paragraphIndex) in currentRuleSlide.paragraphs"
+                  :key="`${currentRuleSlideIndex}-${paragraphIndex}`"
+                >
+                  {{ paragraph }}
+                </p>
+              </div>
+
+              <div class="mt-5 flex items-center justify-center gap-2">
+                <button
+                  v-for="(_, index) in ruleSlides"
+                  :key="`rule-dot-${index}`"
+                  class="h-2.5 w-2.5 rounded-full transition-colors"
+                  :class="index === currentRuleSlideIndex ? 'bg-emerald-500' : 'bg-slate-300 hover:bg-slate-400'"
+                  :aria-label="`スライド ${index + 1} を表示`"
+                  @click="goToRuleSlide(index)"
+                />
+              </div>
+
+              <div class="mt-6 flex items-center justify-between gap-3">
+                <button
+                  class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+                  :disabled="isFirstRuleSlide"
+                  @click="goToPrevRuleSlide"
+                >
+                  前へ
+                </button>
+                <button
+                  class="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-400"
+                  @click="goToNextRuleSlide"
+                >
+                  {{ isLastRuleSlide ? '閉じる' : '次へ' }}
+                </button>
+              </div>
+
               <button
-                class="absolute right-2 top-2 text-slate-500 hover:text-slate-700"
+                class="absolute right-3 top-3 text-slate-500 hover:text-slate-700"
                 aria-label="閉じる"
                 @click="closeRuleModal"
               >

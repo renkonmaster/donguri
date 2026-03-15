@@ -3,12 +3,14 @@ package config
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/alecthomas/kong"
 )
 
 type Config struct {
 	AppAddr string `env:"APP_ADDR" default:":8080"`
+	DBURL   string `env:"DATABASE_URL"`
 	DBUser  string `env:"DB_USER" default:"root"`
 	DBPass  string `env:"DB_PASS" default:"pass"`
 	DBHost  string `env:"DB_HOST" default:"localhost"`
@@ -22,6 +24,10 @@ func (c *Config) Parse() {
 }
 
 func (c Config) PostgreSQLDSN() string {
+	if strings.TrimSpace(c.DBURL) != "" {
+		return c.DBURL
+	}
+
 	return fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		c.DBHost,
