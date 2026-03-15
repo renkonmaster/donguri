@@ -45,6 +45,7 @@ func (h *Hub) Publish(roomID string, payload []byte) {
 	room, ok := h.rooms[roomID]
 	if !ok {
 		h.mu.RUnlock()
+
 		return
 	}
 

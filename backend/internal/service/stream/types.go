@@ -45,6 +45,7 @@ func FormatEvent(event Event) []byte {
 	if data == "" {
 		b.WriteString("data:\n")
 		b.WriteString("\n")
+
 		return b.Bytes()
 	}
 
@@ -53,5 +54,6 @@ func FormatEvent(event Event) []byte {
 	}
 
 	b.WriteString("\n")
+
 	return b.Bytes()
 }
