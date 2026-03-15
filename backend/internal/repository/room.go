@@ -29,13 +29,13 @@ func (r *Repository) FindMatchingRoom(ctx context.Context, maxPlayers int) (*dat
 }
 
 func (r *Repository) CreateRoom(ctx context.Context) (*database.RoomEntity, error) {
-	room := database.RoomEntity{ 
-		ID:     uuid.New(),
-		Status: database.RoomStatusMatching,
-	}
+	var room database.RoomEntity
+	room.ID = uuid.New()
+	room.Status = database.RoomStatusMatching
 	if err := r.db.WithContext(ctx).Create(&room).Error; err != nil {
 		return nil, fmt.Errorf("create room: %w", err)
 	}
+
 	return &room, nil
 }
 
@@ -46,6 +46,7 @@ func (r *Repository) CountPlayersInRoom(ctx context.Context, roomID uuid.UUID) (
 		Count(&count).Error; err != nil {
 		return 0, fmt.Errorf("count players in room: %w", err)
 	}
+
 	return int(count), nil
 }
 
@@ -64,7 +65,7 @@ func (r *Repository) MarkRoomPlayingIfFull(
 	expiresAt := now.Add(duration)
 
 	tx := r.db.WithContext(ctx).
-		Model(&database.RoomEntity{}).
+		Model(new(database.RoomEntity)).
 		Where("id = ? AND status = ?", roomID, database.RoomStatusMatching).
 		Updates(map[string]any{
 			"status":     database.RoomStatusPlaying,
@@ -74,18 +75,18 @@ func (r *Repository) MarkRoomPlayingIfFull(
 	if tx.Error != nil {
 		return false, fmt.Errorf("mark room playing: %w", tx.Error)
 	}
+
 	return tx.RowsAffected > 0, nil
 }
 
 func (r *Repository) CreatePlayer(ctx context.Context, roomID uuid.UUID, name string, lat, lng float64, orderIndex int) (*database.PlayerEntity, error) {
-	player := database.PlayerEntity{
-		ID:         uuid.New(),
-		RoomID:     roomID,
-		Name:       name,
-		// PostGIS は EWKT 形式を geography 型にキャストできる（経度, 緯度 の順）
-		Location:   fmt.Sprintf("SRID=4326;POINT(%f %f)", lng, lat),
-		OrderIndex: orderIndex,
-	}
+	var player database.PlayerEntity
+	player.ID = uuid.New()
+	player.RoomID = roomID
+	player.Name = name
+	// PostGIS は EWKT 形式を geography 型にキャストできる（経度, 緯度 の順）
+	player.Location = fmt.Sprintf("SRID=4326;POINT(%f %f)", lng, lat)
+	player.OrderIndex = orderIndex
 	if err := r.db.WithContext(ctx).Create(&player).Error; err != nil {
 		return nil, fmt.Errorf("create player: %w", err)
 	}

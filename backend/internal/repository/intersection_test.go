@@ -27,7 +27,8 @@ func setupPostGISRepoForTest(t *testing.T) *Repository {
 		t.Skip("POSTGRES_TEST_DSN not set; skipping PostGIS test")
 	}
 
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{}) 
+	var config gorm.Config
+	db, err := gorm.Open(postgres.Open(dsn), &config) 
 	assert.NilError(t, err)
 
 	repo := New(db)
