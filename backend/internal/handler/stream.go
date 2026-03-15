@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/ras0q/go-backend-template/internal/service/stream"
+	"github.com/renkonmaster/donguri/internal/service/stream"
 )
 
 func (h *Handler) StreamRoom(w http.ResponseWriter, r *http.Request) {

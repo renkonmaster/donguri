@@ -1,0 +1,56 @@
+{
+  "files.associations": {
+    "*.json": "jsonc",
+    "*.css": "tailwindcss",
+    "*.md": "markdown",
+    "Dockerfile*": "dockerfile"
+  },
+  "editor.rulers": [120],
+  "search.exclude": {
+    "**/vendor": true
+  },
+  "editor.quickSuggestions": {
+    "strings": "on" // for Tailwind CSS
+  },
+  "editor.tabSize": 2,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+
+  // Go
+  "[go]": {
+    "editor.defaultFormatter": "golang.go",
+    "editor.insertSpaces": false,
+    "editor.tabSize": 4
+  },
+  "gopls": {
+    "ui.semanticTokens": true
+  },
+  "go.lintTool": "golangci-lint-v2",
+  "go.lintFlags": ["--path-mode=abs", "--fast-only"],
+  "go.formatTool": "custom",
+  "go.alternateTools": {
+    "customFormatter": "golangci-lint-v2"
+  },
+  "go.formatFlags": ["fmt", "--stdin"],
+
+  // JavaScript / TypeScript / Vue
+  "[javascript]": {
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+  },
+  "[vue]": {
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint"
+  },
+  "js/ts.preferences.preferTypeOnlyAutoImports": true,
+  "eslint.format.enable": true,
+
+  // CSS
+  "[css]": {
+    "editor.defaultFormatter": "stylelint.vscode-stylelint"
+  },
+  "[tailwindcss]": {
+    "editor.defaultFormatter": "stylelint.vscode-stylelint"
+  },
+  "stylelint.validate": ["css", "tailwindcss", "vue"]
+}

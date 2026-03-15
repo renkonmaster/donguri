@@ -4,9 +4,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/ras0q/go-backend-template/infrastructure/config"
-	"github.com/ras0q/go-backend-template/infrastructure/database"
-	"github.com/ras0q/go-backend-template/infrastructure/injector"
+	"github.com/renkonmaster/donguri/infrastructure/config"
+	"github.com/renkonmaster/donguri/infrastructure/database"
+	"github.com/renkonmaster/donguri/infrastructure/injector"
 	"github.com/ras0q/goalie"
 )
 
