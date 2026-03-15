@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import GameMap from '@/components/GameMap.vue';
-import type { MapPoint } from '@/types/map';
+import type { MapClickPayload, MapPoint } from '@/types/map';
 
 const points: MapPoint[] = [
   { id: '1', lat: -33.868, lng: 151.209, name: 'Alice' },
@@ -20,6 +20,10 @@ const points: MapPoint[] = [
   { id: '14', lat: -34.603, lng: -58.381, name: 'Nick' },
   { id: '15', lat: 28.613, lng: 77.209, name: 'Olivia' },
 ];
+
+function onMapClick(payload: MapClickPayload) {
+  console.log('[GamePage] map click', payload);
+}
 </script>
 
 <template>
@@ -29,6 +33,7 @@ const points: MapPoint[] = [
         :points="points"
         highlighted-id="5"
         show-line
+        @click="onMapClick"
       />
     </div>
   </DefaultLayout>
