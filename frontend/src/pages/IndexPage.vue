@@ -115,6 +115,8 @@ async function startMatching() {
   }
   catch (e) {
     errorMessage.value = e instanceof Error ? e.message : 'エラーが発生しました';
+  }
+  finally {
     loading.value = false;
   }
 }

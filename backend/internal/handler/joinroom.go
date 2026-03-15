@@ -17,6 +17,7 @@ const (
 	maxPlayersPerRoom = 8
 	gameStartDelay    = 5 * time.Second
 	gameDuration      = 10 * time.Minute
+	dbOpTimeout       = 5 * time.Second
 )
 
 // JoinRoom implements [api.Handler].
@@ -90,7 +91,9 @@ func (h *Handler) JoinRoom(ctx context.Context, req *api.JoinRoomRequest) (*api.
 func (h *Handler) scheduleGameStart(roomID uuid.UUID) {
 	time.Sleep(gameStartDelay)
 
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), dbOpTimeout)
+	defer cancel()
+
 	changed, err := h.repo.MarkRoomPlayingIfFull(ctx, roomID, maxPlayersPerRoom, maxPlayersPerRoom, gameDuration)
 	if err != nil {
 		slog.Error("scheduleGameStart: failed to mark room playing", "room_id", roomID, "error", err)

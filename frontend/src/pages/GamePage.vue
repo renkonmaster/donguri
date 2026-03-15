@@ -57,15 +57,15 @@ function mapPlayer(p: ApiPlayer): Player {
 const maxPlayersPerRoom = 8;
 const gameStartCountdownSeconds = 5;
 
-async function fetchRoomState() {
+async function fetchRoomState(): Promise<boolean> {
   const res = await fetch(`/api/rooms/${roomId}`, {
     headers: { 'X-Player-ID': playerId },
   });
   if (res.status === 404) {
     router.replace('/');
-    return;
+    return false;
   }
-  if (!res.ok) return;
+  if (!res.ok) return true;
   const data = await res.json() as {
     status: 'matching' | 'playing' | 'finished';
     players: ApiPlayer[];
@@ -76,6 +76,8 @@ async function fetchRoomState() {
   if (data.status === 'matching' && data.players.length === maxPlayersPerRoom && countdownTimer === null) {
     startCountdown();
   }
+
+  return true;
 }
 
 function startCountdown() {
@@ -102,7 +104,8 @@ onMounted(async () => {
     router.replace('/');
     return;
   }
-  await fetchRoomState();
+  const ok = await fetchRoomState();
+  if (!ok) return;
   sse = new EventSource(`/api/rooms/${roomId}/stream?player_id=${playerId}`);
   sse.addEventListener('message_received', (e: MessageEvent) => {
     const data = JSON.parse(e.data) as unknown as {
