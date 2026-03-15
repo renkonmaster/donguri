@@ -49,6 +49,21 @@ const currentMessages = computed(() => {
   );
 });
 
+// players の orderIndex が変化した (= スワップ成立) ときに swapRequested をクリアする
+watch(
+  () => props.players.map(p => ({ id: p.id, orderIndex: p.orderIndex })),
+  (newVal, oldVal) => {
+    if (!oldVal) return;
+    for (const newP of newVal) {
+      const oldP = oldVal.find(p => p.id === newP.id);
+      if (oldP && oldP.orderIndex !== newP.orderIndex) {
+        swapRequested.delete(newP.id);
+      }
+    }
+  },
+  { deep: true },
+);
+
 // playerId → その会話で既読済みの inbound (相手→自分) メッセージ件数
 const seenCount = reactive(new Map<string, number>());
 

@@ -81,6 +81,22 @@ onMounted(async () => {
   }
   await fetchRoomState();
   sse = new EventSource(`/api/rooms/${roomId}/stream?player_id=${playerId}`);
+  sse.addEventListener('message_received', (e: MessageEvent) => {
+    const data = JSON.parse(e.data as string) as {
+      id: string;
+      sender_id: string;
+      receiver_id: string;
+      content: string;
+      created_at: string;
+    };
+    messages.value.push({
+      id: data.id,
+      senderId: data.sender_id,
+      receiverId: data.receiver_id,
+      content: data.content,
+      createdAt: new Date(data.created_at),
+    });
+  });
   sse.addEventListener('room_started', () => {
     if (countdownTimer !== null) {
       clearInterval(countdownTimer);
@@ -101,20 +117,35 @@ onUnmounted(() => {
   }
 });
 
-function onSendMessage(receiverId: string, content: string) {
-  // TODO: POST /api/rooms/{room_id}/messages に接続する
-  messages.value.push({
-    id: crypto.randomUUID(),
-    senderId: playerId,
-    receiverId,
-    content,
-    createdAt: new Date(),
+async function onSendMessage(receiverId: string, content: string) {
+  await fetch(`/api/rooms/${roomId}/messages`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Player-ID': playerId,
+    },
+    body: JSON.stringify({ receiver_id: receiverId, content }),
   });
+  // メッセージは SSE の message_received イベントで追加される
 }
 
-function onToggleSwap(targetPlayerId: string, needsSwap: boolean) {
-  // TODO: PUT /api/rooms/{room_id}/connections/{target_id} に接続する
-  console.log('[GamePage] toggleSwap', targetPlayerId, needsSwap);
+async function onToggleSwap(targetPlayerId: string, needsSwap: boolean) {
+  const res = await fetch(`/api/rooms/${roomId}/connections/${targetPlayerId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Player-ID': playerId,
+    },
+    body: JSON.stringify({ needs_swap: needsSwap }),
+  });
+  if (!res.ok) return;
+  const data = await res.json() as { matched: boolean; room_status: string };
+  if (data.matched) {
+    void fetchRoomState();
+  }
+  if (data.room_status === 'finished') {
+    roomStatus.value = 'finished';
+  }
 }
 </script>
 
