@@ -1,34 +1,26 @@
 # syntax=docker/dockerfile:1
 
+# ----------------------------------------
+# 1. Frontend Builder (Node.js)
+# ----------------------------------------
 FROM node:24-alpine AS frontend-builder
-
 WORKDIR /app
 
 ARG KOYEB_PUBLIC_DOMAIN
-ENV KOYEB_PUBLIC_DOMAIN=${KOYEB_PUBLIC_DOMAIN}
+# KoyebのダッシュボードでVITE_PUBLIC_URLを直接設定する場合は以下のドメイン結合は不要です
 ENV VITE_PUBLIC_URL=https://${KOYEB_PUBLIC_DOMAIN}
 
 RUN corepack enable
-
 COPY frontend/package.json frontend/pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
-
 COPY frontend/ ./
 RUN pnpm build
+# → /app/dist に静的ファイルが生成される
 
 # ----------------------------------------
-# Frontend runtime (Koyeb frontend service)
-# ----------------------------------------
-FROM nginx:1.29-alpine AS frontend
-
-COPY --from=frontend-builder /app/dist /usr/share/nginx/html
-EXPOSE 80
-
-# ----------------------------------------
-# Backend builder (Koyeb backend service)
+# 2. Backend Builder (Go)
 # ----------------------------------------
 FROM golang:1.26 AS builder
-
 WORKDIR /app
 
 ENV CGO_ENABLED=0
@@ -50,9 +42,18 @@ RUN \
   --mount=type=bind,source=backend,target=.,readwrite \
   go build -o /usr/bin/server ./main.go
 
-# use `debug-nonroot` for debug shell access
+# ----------------------------------------
+# 3. Final Runtime (統合された1つのアプリ)
+# ----------------------------------------
 FROM gcr.io/distroless/static-debian11:nonroot
 
-COPY --from=builder /usr/bin/server /usr/bin/server
+WORKDIR /app
 
-CMD ["/usr/bin/server"]
+# Goの実行ファイルをコピー
+COPY --from=builder /usr/bin/server /app/server
+
+# Nginxを使わず、Viteのビルド結果(dist)をそのまま最終コンテナにコピー
+COPY --from=frontend-builder /app/dist /app/dist
+
+# アプリケーションの実行
+CMD ["/app/server"]
