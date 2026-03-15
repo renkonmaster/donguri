@@ -1,23 +1,29 @@
 package injector
 
 import (
+	"net/http"
+
 	"github.com/ras0q/go-backend-template/internal/api"
 	"github.com/ras0q/go-backend-template/internal/handler"
 	"github.com/ras0q/go-backend-template/internal/repository"
-	photo_service "github.com/ras0q/go-backend-template/internal/service/photo"
+	"github.com/ras0q/go-backend-template/internal/service/stream"
 
 	"gorm.io/gorm"
 )
 
-func InjectServer(db *gorm.DB) (*api.Server, error) {
-	photo := photo_service.NewPhotoService()
+func InjectServer(db *gorm.DB) (http.Handler, error) {
+	hub := stream.NewHub()
 	repo := repository.New(db)
-	h := handler.New(photo, repo)
+	h := handler.New(repo, hub)
 
 	s, err := api.NewServer(h)
 	if err != nil {
 		return nil, err
 	}
 
-	return s, nil
+	mux := http.NewServeMux()
+	mux.Handle("/api/v1/", s)
+	mux.HandleFunc("/api/rooms/", h.StreamRoom)
+
+	return mux, nil
 }
