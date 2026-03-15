@@ -55,6 +55,7 @@ func (h *Handler) JoinRoom(ctx context.Context, req *api.JoinRoomRequest) (*api.
 		roomID = room.ID
 		playerID = player.ID
 		joinedCount = count + 1
+
 		return nil
 	})
 	if err != nil {

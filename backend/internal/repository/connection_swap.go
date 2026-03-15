@@ -37,7 +37,7 @@ func (r *Repository) SetSwapIntent(ctx context.Context, params SetSwapIntentPara
 	result := &SetSwapIntentResult{Matched: false, RoomStatus: database.RoomStatusPlaying}
 
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Clauses(clause.OnConflict{
+		if err := tx.Clauses(clause.OnConflict{ 
 			Columns: []clause.Column{
 				{Name: "room_id"},
 				{Name: "sender_id"},
@@ -145,6 +145,7 @@ func (r *Repository) SetSwapIntent(ctx context.Context, params SetSwapIntentPara
 			return fmt.Errorf("update room status to finished: %w", err)
 		}
 		result.RoomStatus = database.RoomStatusFinished
+
 		return nil
 	})
 	if err != nil {

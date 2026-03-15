@@ -19,7 +19,7 @@ func setupJoinRoomHandler(t *testing.T) *Handler {
 	t.Helper()
 
 	dsn := "file:" + uuid.NewString() + "?mode=memory&cache=shared"
-	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{}) //nolint:exhaustruct
+	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{}) 
 	assert.NilError(t, err)
 
 	assert.NilError(t, db.Exec(`

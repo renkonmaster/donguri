@@ -9,7 +9,7 @@ import (
 )
 
 func SetupGORM(dsn string) (*gorm.DB, error) {
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{ 
 		Logger: logger.Default.LogMode(logger.Warn),
 	})
 	if err != nil {

@@ -35,7 +35,7 @@ func (h *Handler) GetRoom(ctx context.Context, params api.GetRoomParams) (*api.R
 		})
 	}
 
-	timeLeft := api.OptNilInt{}
+	var timeLeft api.OptNilInt
 	if state.TimeLeftSeconds == nil {
 		timeLeft.SetToNull()
 	} else {

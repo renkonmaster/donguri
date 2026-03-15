@@ -8,7 +8,7 @@ type Hub struct {
 }
 
 func NewHub() *Hub {
-	return &Hub{
+	return &Hub{ 
 		rooms: map[string]map[string]chan []byte{},
 	}
 }

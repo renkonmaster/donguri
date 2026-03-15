@@ -30,7 +30,7 @@ func setupGetRoomHandler(t *testing.T) *Handler {
 		t.Skip("POSTGRES_TEST_DSN not set; skipping GetRoom handler test")
 	}
 
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{}) //nolint:exhaustruct
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{}) 
 	assert.NilError(t, err)
 
 	t.Cleanup(func() {

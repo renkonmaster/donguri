@@ -24,11 +24,12 @@ func (r *Repository) FindMatchingRoom(ctx context.Context, maxPlayers int) (*dat
 	if err != nil {
 		return nil, fmt.Errorf("find matching room: %w", err)
 	}
+
 	return &room, nil
 }
 
 func (r *Repository) CreateRoom(ctx context.Context) (*database.RoomEntity, error) {
-	room := database.RoomEntity{
+	room := database.RoomEntity{ 
 		ID:     uuid.New(),
 		Status: database.RoomStatusMatching,
 	}
