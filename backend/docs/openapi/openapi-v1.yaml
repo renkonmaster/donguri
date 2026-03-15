@@ -1,11 +1,11 @@
 openapi: 3.1.0
 info:
-  title: Go Backend Template API
+  title: Donguri API
   version: 1.0.0
 paths:
   /api/v1/ping:
     get:
-      summary: Ping API
+      summary: Ping
       operationId: ping
       responses:
         "200":
@@ -15,104 +15,392 @@ paths:
               schema:
                 type: string
                 example: pong
-        default:
+        "default":
+          description: Error response
           content:
             application/json:
               schema:
-                $ref: "#/components/responses/Error"
-  /api/v1/users:
-    get:
-      summary: Get all users
-      operationId: getUsers
-      responses:
-        "200":
-          description: List of users
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/User"
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/responses/Error"
+                $ref: "#/components/schemas/Error"
+
+  /api/games/join:
     post:
-      summary: Create a user
-      operationId: createUser
+      summary: Join matching queue
+      operationId: joinGame
       requestBody:
-        $ref: "#/components/requestBodies/CreateUser"
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JoinGameRequest"
+      responses:
+        "202":
+          description: Joined or assigned to a game
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JoinGameResponse"
+        "default":
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/games/{game_id}/stream:
+    get:
+      summary: Subscribe game events (SSE)
+      operationId: subscribeGameStream
+      parameters:
+        - name: game_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: player_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
       responses:
         "200":
-          description: Created user ID
+          description: SSE stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                example: |
+                  event: game_started
+                  data: {"game_id":"00000000-0000-0000-0000-000000000001"}
+
+                  event: game_updated
+                  data: {"intersection_count":3}
+        "default":
+          description: Error response
           content:
             application/json:
               schema:
-                $ref: "#/components/responses/CreateUser"
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/responses/Error"
-  /api/v1/users/{userID}:
+                $ref: "#/components/schemas/Error"
+
+  /api/games/{game_id}:
     get:
-      summary: Get user by ID
-      operationId: getUser
+      summary: Get game state
+      operationId: getGame
       parameters:
-        - name: userID
+        - name: game_id
           in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: X-Player-ID
+          in: header
           required: true
           schema:
             type: string
             format: uuid
       responses:
         "200":
-          description: User info
+          description: Current game and player-related state
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/User"
-        default:
+                $ref: "#/components/schemas/GameStateResponse"
+        "default":
+          description: Error response
           content:
             application/json:
               schema:
-                $ref: "#/components/responses/Error"
-components:
-  requestBodies:
-    CreateUser:
-      required: true
-      content:
-        application/json:
+                $ref: "#/components/schemas/Error"
+
+  /api/games/{game_id}/swaps/intents:
+    post:
+      summary: Set swap intent ON by target player ID
+      operationId: createSwapIntent
+      parameters:
+        - name: game_id
+          in: path
+          required: true
           schema:
-            type: object
-            properties:
-              name:
-                type: string
-              email:
-                type: string
-                format: email
-            required:
-              - name
-              - email
-  responses:
-    Error:
+            type: string
+            format: uuid
+        - name: X-Player-ID
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SwapIntentRequest"
+      responses:
+        "200":
+          description: Intent accepted or swap resolved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SwapIntentResponse"
+        "default":
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/games/{game_id}/swaps/intents/{target_player_id}:
+    delete:
+      summary: Cancel swap intent by target player ID
+      operationId: deleteSwapIntent
+      parameters:
+        - name: game_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: target_player_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: X-Player-ID
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Intent removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteSwapIntentResponse"
+        "default":
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/games/{game_id}/players/me/intent:
+    patch:
+      summary: Set directional swap intent ON (prev or next)
+      operationId: patchMyDirectionalIntent
+      parameters:
+        - name: game_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: X-Player-ID
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DirectionalIntentRequest"
+      responses:
+        "200":
+          description: Directional intent updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DirectionalIntentResponse"
+        "default":
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      summary: Set directional swap intent OFF (prev or next)
+      operationId: deleteMyDirectionalIntent
+      parameters:
+        - name: game_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: X-Player-ID
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DirectionalIntentRequest"
+      responses:
+        "200":
+          description: Directional intent removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DirectionalIntentResponse"
+        "default":
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/games/{game_id}/messages:
+    get:
+      summary: Get message history related to myself
+      operationId: getMessages
+      parameters:
+        - name: game_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: X-Player-ID
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Message history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Message"
+        "default":
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      summary: Send message to adjacent player
+      operationId: createMessage
+      parameters:
+        - name: game_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: X-Player-ID
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMessageRequest"
+      responses:
+        "201":
+          description: Message created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+        "default":
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  schemas:
+    JoinGameRequest:
       type: object
       properties:
-        message:
+        name:
           type: string
+        lat:
+          type: number
+          format: double
+        lng:
+          type: number
+          format: double
       required:
-        - message
-    CreateUser:
+        - name
+        - lat
+        - lng
+
+    JoinGameResponse:
       type: object
       properties:
-        id:
+        game_id:
+          type: string
+          format: uuid
+        player_id:
           type: string
           format: uuid
       required:
-        - id
-  schemas:
-    User:
+        - game_id
+        - player_id
+
+    GameStateResponse:
+      type: object
+      properties:
+        status:
+          $ref: "#/components/schemas/GameStatus"
+        time_left:
+          type: integer
+          minimum: 0
+          description: Remaining seconds. null when not started.
+          nullable: true
+        intersection_count:
+          type: integer
+          minimum: 0
+        players:
+          type: array
+          items:
+            $ref: "#/components/schemas/Player"
+        my_intents:
+          type: array
+          items:
+            type: string
+            format: uuid
+        received_intents:
+          type: array
+          items:
+            type: string
+            format: uuid
+      required:
+        - status
+        - intersection_count
+        - players
+        - my_intents
+        - received_intents
+
+    GameStatus:
+      type: string
+      enum:
+        - matching
+        - playing
+        - finished
+
+    Player:
       type: object
       properties:
         id:
@@ -120,12 +408,130 @@ components:
           format: uuid
         name:
           type: string
-        email:
-          type: string
-        iconUrl:
-          type: string
+        order_index:
+          type: integer
+          minimum: 0
+        location:
+          $ref: "#/components/schemas/Location"
       required:
         - id
         - name
-        - email
-        - iconUrl
+        - order_index
+        - location
+
+    Location:
+      type: object
+      properties:
+        lat:
+          type: number
+          format: double
+        lng:
+          type: number
+          format: double
+      required:
+        - lat
+        - lng
+
+    SwapIntentRequest:
+      type: object
+      properties:
+        target_player_id:
+          type: string
+          format: uuid
+      required:
+        - target_player_id
+
+    SwapIntentResponse:
+      type: object
+      properties:
+        matched:
+          type: boolean
+          description: true when both sides were ON and swap executed
+        game_status:
+          $ref: "#/components/schemas/GameStatus"
+      required:
+        - matched
+        - game_status
+
+    DeleteSwapIntentResponse:
+      type: object
+      properties:
+        removed:
+          type: boolean
+      required:
+        - removed
+
+    DirectionalIntentRequest:
+      type: object
+      properties:
+        direction:
+          type: string
+          enum:
+            - prev
+            - next
+      required:
+        - direction
+
+    DirectionalIntentResponse:
+      type: object
+      properties:
+        direction:
+          type: string
+          enum:
+            - prev
+            - next
+        enabled:
+          type: boolean
+      required:
+        - direction
+        - enabled
+
+    CreateMessageRequest:
+      type: object
+      properties:
+        receiver_id:
+          type: string
+          format: uuid
+        content:
+          type: string
+          minLength: 1
+          maxLength: 2000
+      required:
+        - receiver_id
+        - content
+
+    Message:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        game_id:
+          type: string
+          format: uuid
+        sender_id:
+          type: string
+          format: uuid
+        receiver_id:
+          type: string
+          format: uuid
+        content:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - game_id
+        - sender_id
+        - receiver_id
+        - content
+        - created_at
+
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
