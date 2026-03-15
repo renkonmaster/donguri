@@ -38,11 +38,14 @@ func TestCreateMessage_AdjacentValidation(t *testing.T) {
 	room, err := repo.CreateRoom(ctx)
 	assert.NilError(t, err)
 
+	// 4 人のリングを構成: 0-1-2-3-0。0 と 1 は隣接、0 と 2 は非隣接
 	sender, err := repo.CreatePlayer(ctx, room.ID, "sender", 33.0, 131.0, 0)
 	assert.NilError(t, err)
 	adjacent, err := repo.CreatePlayer(ctx, room.ID, "adjacent", 33.1, 131.1, 1)
 	assert.NilError(t, err)
 	notAdjacent, err := repo.CreatePlayer(ctx, room.ID, "not-adjacent", 33.2, 131.2, 2)
+	assert.NilError(t, err)
+	_, err = repo.CreatePlayer(ctx, room.ID, "p3", 33.3, 131.3, 3)
 	assert.NilError(t, err)
 
 	t.Run("success when order_index diff is 1", func(t *testing.T) {
@@ -58,7 +61,22 @@ func TestCreateMessage_AdjacentValidation(t *testing.T) {
 		assert.Equal(t, *message.ReceiverID, adjacent.ID)
 	})
 
-	t.Run("fails when order_index diff is not 1", func(t *testing.T) {
+	t.Run("success when order_index diff is n-1 (wrap-around)", func(t *testing.T) {
+		// sender (0) と p3 (3) は diff=3=n-1 で隣接
+		var p3Entity database.PlayerEntity
+		assert.NilError(t, repo.db.WithContext(ctx).Where("room_id = ? AND name = ?", room.ID, "p3").First(&p3Entity).Error)
+		message, createErr := repo.CreateMessage(ctx, CreateMessageParams{
+			RoomID:     room.ID,
+			SenderID:   sender.ID,
+			ReceiverID: p3Entity.ID,
+			Content:    "wrap-around",
+		})
+		assert.NilError(t, createErr)
+		assert.Assert(t, message != nil)
+	})
+
+	t.Run("fails when order_index diff is not adjacent", func(t *testing.T) {
+		// sender (0) と notAdjacent (2) は diff=2、n=4 なので隣接しない
 		_, createErr := repo.CreateMessage(ctx, CreateMessageParams{
 			RoomID:     room.ID,
 			SenderID:   sender.ID,

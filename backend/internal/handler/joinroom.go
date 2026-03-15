@@ -94,6 +94,7 @@ func (h *Handler) scheduleGameStart(roomID uuid.UUID) {
 	changed, err := h.repo.MarkRoomPlayingIfFull(ctx, roomID, maxPlayersPerRoom, maxPlayersPerRoom, gameDuration)
 	if err != nil {
 		slog.Error("scheduleGameStart: failed to mark room playing", "room_id", roomID, "error", err)
+
 		return
 	}
 	if !changed {
