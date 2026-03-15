@@ -11,8 +11,25 @@ import (
 )
 
 var (
-	rn1AllowedHeaders = map[string]string{
+	rn9AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
+	}
+	rn2AllowedHeaders = map[string]string{
+		"GET": "X-Player-Id",
+	}
+	rn3AllowedHeaders = map[string]string{
+		"GET":  "X-Player-Id",
+		"POST": "Content-Type,X-Player-Id",
+	}
+	rn6AllowedHeaders = map[string]string{
+		"DELETE": "Content-Type,X-Player-Id",
+		"PATCH":  "Content-Type,X-Player-Id",
+	}
+	rn5AllowedHeaders = map[string]string{
+		"POST": "Content-Type,X-Player-Id",
+	}
+	rn8AllowedHeaders = map[string]string{
+		"DELETE": "X-Player-Id",
 	}
 )
 
@@ -46,7 +63,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.notFound(w, r)
 		return
 	}
-	args := [1]string{}
+	args := [2]string{}
 
 	// Static code generated router with unwrapped path search.
 	switch {
@@ -55,9 +72,9 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 		switch elem[0] {
-		case '/': // Prefix: "/api/v1/"
+		case '/': // Prefix: "/api/"
 
-			if l := len("/api/v1/"); len(elem) >= l && elem[0:l] == "/api/v1/" {
+			if l := len("/api/"); len(elem) >= l && elem[0:l] == "/api/" {
 				elem = elem[l:]
 			} else {
 				break
@@ -67,9 +84,259 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				break
 			}
 			switch elem[0] {
-			case 'p': // Prefix: "ping"
+			case 'r': // Prefix: "rooms/"
 
-				if l := len("ping"); len(elem) >= l && elem[0:l] == "ping" {
+				if l := len("rooms/"); len(elem) >= l && elem[0:l] == "rooms/" {
+					elem = elem[l:]
+				} else {
+					break
+				}
+
+				if len(elem) == 0 {
+					break
+				}
+				switch elem[0] {
+				case 'j': // Prefix: "join"
+					origElem := elem
+					if l := len("join"); len(elem) >= l && elem[0:l] == "join" {
+						elem = elem[l:]
+					} else {
+						break
+					}
+
+					if len(elem) == 0 {
+						// Leaf node.
+						switch r.Method {
+						case "POST":
+							s.handleJoinRoomRequest([0]string{}, elemIsEscaped, w, r)
+						default:
+							s.notAllowed(w, r, notAllowedParams{
+								allowedMethods: "POST",
+								allowedHeaders: rn9AllowedHeaders,
+								acceptPost:     "application/json",
+								acceptPatch:    "",
+							})
+						}
+
+						return
+					}
+
+					elem = origElem
+				}
+				// Param: "room_id"
+				// Match until "/"
+				idx := strings.IndexByte(elem, '/')
+				if idx < 0 {
+					idx = len(elem)
+				}
+				args[0] = elem[:idx]
+				elem = elem[idx:]
+
+				if len(elem) == 0 {
+					switch r.Method {
+					case "GET":
+						s.handleGetRoomRequest([1]string{
+							args[0],
+						}, elemIsEscaped, w, r)
+					default:
+						s.notAllowed(w, r, notAllowedParams{
+							allowedMethods: "GET",
+							allowedHeaders: rn2AllowedHeaders,
+							acceptPost:     "",
+							acceptPatch:    "",
+						})
+					}
+
+					return
+				}
+				switch elem[0] {
+				case '/': // Prefix: "/"
+
+					if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+						elem = elem[l:]
+					} else {
+						break
+					}
+
+					if len(elem) == 0 {
+						break
+					}
+					switch elem[0] {
+					case 'm': // Prefix: "messages"
+
+						if l := len("messages"); len(elem) >= l && elem[0:l] == "messages" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							// Leaf node.
+							switch r.Method {
+							case "GET":
+								s.handleGetMessagesRequest([1]string{
+									args[0],
+								}, elemIsEscaped, w, r)
+							case "POST":
+								s.handleCreateMessageRequest([1]string{
+									args[0],
+								}, elemIsEscaped, w, r)
+							default:
+								s.notAllowed(w, r, notAllowedParams{
+									allowedMethods: "GET,POST",
+									allowedHeaders: rn3AllowedHeaders,
+									acceptPost:     "application/json",
+									acceptPatch:    "",
+								})
+							}
+
+							return
+						}
+
+					case 'p': // Prefix: "players/me/intent"
+
+						if l := len("players/me/intent"); len(elem) >= l && elem[0:l] == "players/me/intent" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							// Leaf node.
+							switch r.Method {
+							case "DELETE":
+								s.handleDeleteMyDirectionalIntentRequest([1]string{
+									args[0],
+								}, elemIsEscaped, w, r)
+							case "PATCH":
+								s.handlePatchMyDirectionalIntentRequest([1]string{
+									args[0],
+								}, elemIsEscaped, w, r)
+							default:
+								s.notAllowed(w, r, notAllowedParams{
+									allowedMethods: "DELETE,PATCH",
+									allowedHeaders: rn6AllowedHeaders,
+									acceptPost:     "",
+									acceptPatch:    "application/json",
+								})
+							}
+
+							return
+						}
+
+					case 's': // Prefix: "s"
+
+						if l := len("s"); len(elem) >= l && elem[0:l] == "s" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							break
+						}
+						switch elem[0] {
+						case 't': // Prefix: "tream"
+
+							if l := len("tream"); len(elem) >= l && elem[0:l] == "tream" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch r.Method {
+								case "GET":
+									s.handleSubscribeRoomStreamRequest([1]string{
+										args[0],
+									}, elemIsEscaped, w, r)
+								default:
+									s.notAllowed(w, r, notAllowedParams{
+										allowedMethods: "GET",
+										allowedHeaders: nil,
+										acceptPost:     "",
+										acceptPatch:    "",
+									})
+								}
+
+								return
+							}
+
+						case 'w': // Prefix: "waps/intents"
+
+							if l := len("waps/intents"); len(elem) >= l && elem[0:l] == "waps/intents" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								switch r.Method {
+								case "POST":
+									s.handleCreateSwapIntentRequest([1]string{
+										args[0],
+									}, elemIsEscaped, w, r)
+								default:
+									s.notAllowed(w, r, notAllowedParams{
+										allowedMethods: "POST",
+										allowedHeaders: rn5AllowedHeaders,
+										acceptPost:     "application/json",
+										acceptPatch:    "",
+									})
+								}
+
+								return
+							}
+							switch elem[0] {
+							case '/': // Prefix: "/"
+
+								if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								// Param: "target_player_id"
+								// Leaf parameter, slashes are prohibited
+								idx := strings.IndexByte(elem, '/')
+								if idx >= 0 {
+									break
+								}
+								args[1] = elem
+								elem = ""
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch r.Method {
+									case "DELETE":
+										s.handleDeleteSwapIntentRequest([2]string{
+											args[0],
+											args[1],
+										}, elemIsEscaped, w, r)
+									default:
+										s.notAllowed(w, r, notAllowedParams{
+											allowedMethods: "DELETE",
+											allowedHeaders: rn8AllowedHeaders,
+											acceptPost:     "",
+											acceptPatch:    "",
+										})
+									}
+
+									return
+								}
+
+							}
+
+						}
+
+					}
+
+				}
+
+			case 'v': // Prefix: "v1/ping"
+
+				if l := len("v1/ping"); len(elem) >= l && elem[0:l] == "v1/ping" {
 					elem = elem[l:]
 				} else {
 					break
@@ -92,70 +359,6 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 
-			case 'u': // Prefix: "users"
-
-				if l := len("users"); len(elem) >= l && elem[0:l] == "users" {
-					elem = elem[l:]
-				} else {
-					break
-				}
-
-				if len(elem) == 0 {
-					switch r.Method {
-					case "GET":
-						s.handleGetUsersRequest([0]string{}, elemIsEscaped, w, r)
-					case "POST":
-						s.handleCreateUserRequest([0]string{}, elemIsEscaped, w, r)
-					default:
-						s.notAllowed(w, r, notAllowedParams{
-							allowedMethods: "GET,POST",
-							allowedHeaders: rn1AllowedHeaders,
-							acceptPost:     "application/json",
-							acceptPatch:    "",
-						})
-					}
-
-					return
-				}
-				switch elem[0] {
-				case '/': // Prefix: "/"
-
-					if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
-						elem = elem[l:]
-					} else {
-						break
-					}
-
-					// Param: "userID"
-					// Leaf parameter, slashes are prohibited
-					idx := strings.IndexByte(elem, '/')
-					if idx >= 0 {
-						break
-					}
-					args[0] = elem
-					elem = ""
-
-					if len(elem) == 0 {
-						// Leaf node.
-						switch r.Method {
-						case "GET":
-							s.handleGetUserRequest([1]string{
-								args[0],
-							}, elemIsEscaped, w, r)
-						default:
-							s.notAllowed(w, r, notAllowedParams{
-								allowedMethods: "GET",
-								allowedHeaders: nil,
-								acceptPost:     "",
-								acceptPatch:    "",
-							})
-						}
-
-						return
-					}
-
-				}
-
 			}
 
 		}
@@ -171,7 +374,7 @@ type Route struct {
 	operationGroup string
 	pathPattern    string
 	count          int
-	args           [1]string
+	args           [2]string
 }
 
 // Name returns ogen operation name.
@@ -244,9 +447,9 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 			break
 		}
 		switch elem[0] {
-		case '/': // Prefix: "/api/v1/"
+		case '/': // Prefix: "/api/"
 
-			if l := len("/api/v1/"); len(elem) >= l && elem[0:l] == "/api/v1/" {
+			if l := len("/api/"); len(elem) >= l && elem[0:l] == "/api/" {
 				elem = elem[l:]
 			} else {
 				break
@@ -256,58 +459,64 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 				break
 			}
 			switch elem[0] {
-			case 'p': // Prefix: "ping"
+			case 'r': // Prefix: "rooms/"
 
-				if l := len("ping"); len(elem) >= l && elem[0:l] == "ping" {
+				if l := len("rooms/"); len(elem) >= l && elem[0:l] == "rooms/" {
 					elem = elem[l:]
 				} else {
 					break
 				}
 
 				if len(elem) == 0 {
-					// Leaf node.
-					switch method {
-					case "GET":
-						r.name = PingOperation
-						r.summary = "Ping API"
-						r.operationID = "ping"
-						r.operationGroup = ""
-						r.pathPattern = "/api/v1/ping"
-						r.args = args
-						r.count = 0
-						return r, true
-					default:
-						return
+					break
+				}
+				switch elem[0] {
+				case 'j': // Prefix: "join"
+					origElem := elem
+					if l := len("join"); len(elem) >= l && elem[0:l] == "join" {
+						elem = elem[l:]
+					} else {
+						break
 					}
-				}
 
-			case 'u': // Prefix: "users"
+					if len(elem) == 0 {
+						// Leaf node.
+						switch method {
+						case "POST":
+							r.name = JoinRoomOperation
+							r.summary = "Join matching queue"
+							r.operationID = "joinRoom"
+							r.operationGroup = ""
+							r.pathPattern = "/api/rooms/join"
+							r.args = args
+							r.count = 0
+							return r, true
+						default:
+							return
+						}
+					}
 
-				if l := len("users"); len(elem) >= l && elem[0:l] == "users" {
-					elem = elem[l:]
-				} else {
-					break
+					elem = origElem
 				}
+				// Param: "room_id"
+				// Match until "/"
+				idx := strings.IndexByte(elem, '/')
+				if idx < 0 {
+					idx = len(elem)
+				}
+				args[0] = elem[:idx]
+				elem = elem[idx:]
 
 				if len(elem) == 0 {
 					switch method {
 					case "GET":
-						r.name = GetUsersOperation
-						r.summary = "Get all users"
-						r.operationID = "getUsers"
+						r.name = GetRoomOperation
+						r.summary = "Get room state"
+						r.operationID = "getRoom"
 						r.operationGroup = ""
-						r.pathPattern = "/api/v1/users"
+						r.pathPattern = "/api/rooms/{room_id}"
 						r.args = args
-						r.count = 0
-						return r, true
-					case "POST":
-						r.name = CreateUserOperation
-						r.summary = "Create a user"
-						r.operationID = "createUser"
-						r.operationGroup = ""
-						r.pathPattern = "/api/v1/users"
-						r.args = args
-						r.count = 0
+						r.count = 1
 						return r, true
 					default:
 						return
@@ -322,32 +531,204 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 						break
 					}
 
-					// Param: "userID"
-					// Leaf parameter, slashes are prohibited
-					idx := strings.IndexByte(elem, '/')
-					if idx >= 0 {
+					if len(elem) == 0 {
 						break
 					}
-					args[0] = elem
-					elem = ""
+					switch elem[0] {
+					case 'm': // Prefix: "messages"
 
-					if len(elem) == 0 {
-						// Leaf node.
-						switch method {
-						case "GET":
-							r.name = GetUserOperation
-							r.summary = "Get user by ID"
-							r.operationID = "getUser"
-							r.operationGroup = ""
-							r.pathPattern = "/api/v1/users/{userID}"
-							r.args = args
-							r.count = 1
-							return r, true
-						default:
-							return
+						if l := len("messages"); len(elem) >= l && elem[0:l] == "messages" {
+							elem = elem[l:]
+						} else {
+							break
 						}
+
+						if len(elem) == 0 {
+							// Leaf node.
+							switch method {
+							case "GET":
+								r.name = GetMessagesOperation
+								r.summary = "Get message history related to myself"
+								r.operationID = "getMessages"
+								r.operationGroup = ""
+								r.pathPattern = "/api/rooms/{room_id}/messages"
+								r.args = args
+								r.count = 1
+								return r, true
+							case "POST":
+								r.name = CreateMessageOperation
+								r.summary = "Send message to adjacent player"
+								r.operationID = "createMessage"
+								r.operationGroup = ""
+								r.pathPattern = "/api/rooms/{room_id}/messages"
+								r.args = args
+								r.count = 1
+								return r, true
+							default:
+								return
+							}
+						}
+
+					case 'p': // Prefix: "players/me/intent"
+
+						if l := len("players/me/intent"); len(elem) >= l && elem[0:l] == "players/me/intent" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							// Leaf node.
+							switch method {
+							case "DELETE":
+								r.name = DeleteMyDirectionalIntentOperation
+								r.summary = "Set directional swap intent OFF (prev or next)"
+								r.operationID = "deleteMyDirectionalIntent"
+								r.operationGroup = ""
+								r.pathPattern = "/api/rooms/{room_id}/players/me/intent"
+								r.args = args
+								r.count = 1
+								return r, true
+							case "PATCH":
+								r.name = PatchMyDirectionalIntentOperation
+								r.summary = "Set directional swap intent ON (prev or next)"
+								r.operationID = "patchMyDirectionalIntent"
+								r.operationGroup = ""
+								r.pathPattern = "/api/rooms/{room_id}/players/me/intent"
+								r.args = args
+								r.count = 1
+								return r, true
+							default:
+								return
+							}
+						}
+
+					case 's': // Prefix: "s"
+
+						if l := len("s"); len(elem) >= l && elem[0:l] == "s" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							break
+						}
+						switch elem[0] {
+						case 't': // Prefix: "tream"
+
+							if l := len("tream"); len(elem) >= l && elem[0:l] == "tream" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch method {
+								case "GET":
+									r.name = SubscribeRoomStreamOperation
+									r.summary = "Subscribe room events (SSE)"
+									r.operationID = "subscribeRoomStream"
+									r.operationGroup = ""
+									r.pathPattern = "/api/rooms/{room_id}/stream"
+									r.args = args
+									r.count = 1
+									return r, true
+								default:
+									return
+								}
+							}
+
+						case 'w': // Prefix: "waps/intents"
+
+							if l := len("waps/intents"); len(elem) >= l && elem[0:l] == "waps/intents" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								switch method {
+								case "POST":
+									r.name = CreateSwapIntentOperation
+									r.summary = "Set swap intent ON by target player ID"
+									r.operationID = "createSwapIntent"
+									r.operationGroup = ""
+									r.pathPattern = "/api/rooms/{room_id}/swaps/intents"
+									r.args = args
+									r.count = 1
+									return r, true
+								default:
+									return
+								}
+							}
+							switch elem[0] {
+							case '/': // Prefix: "/"
+
+								if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								// Param: "target_player_id"
+								// Leaf parameter, slashes are prohibited
+								idx := strings.IndexByte(elem, '/')
+								if idx >= 0 {
+									break
+								}
+								args[1] = elem
+								elem = ""
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch method {
+									case "DELETE":
+										r.name = DeleteSwapIntentOperation
+										r.summary = "Cancel swap intent by target player ID"
+										r.operationID = "deleteSwapIntent"
+										r.operationGroup = ""
+										r.pathPattern = "/api/rooms/{room_id}/swaps/intents/{target_player_id}"
+										r.args = args
+										r.count = 2
+										return r, true
+									default:
+										return
+									}
+								}
+
+							}
+
+						}
+
 					}
 
+				}
+
+			case 'v': // Prefix: "v1/ping"
+
+				if l := len("v1/ping"); len(elem) >= l && elem[0:l] == "v1/ping" {
+					elem = elem[l:]
+				} else {
+					break
+				}
+
+				if len(elem) == 0 {
+					// Leaf node.
+					switch method {
+					case "GET":
+						r.name = PingOperation
+						r.summary = "Ping"
+						r.operationID = "ping"
+						r.operationGroup = ""
+						r.pathPattern = "/api/v1/ping"
+						r.args = args
+						r.count = 0
+						return r, true
+					default:
+						return
+					}
 				}
 
 			}

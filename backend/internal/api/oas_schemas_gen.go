@@ -5,7 +5,9 @@ package api
 import (
 	"fmt"
 	"io"
+	"time"
 
+	"github.com/go-faster/errors"
 	"github.com/google/uuid"
 )
 
@@ -13,47 +15,171 @@ func (s *ErrorStatusCode) Error() string {
 	return fmt.Sprintf("code %d: %+v", s.StatusCode, s.Response)
 }
 
-// Ref: #/components/responses/CreateUser
-type CreateUser struct {
-	ID uuid.UUID `json:"id"`
+// Ref: #/components/schemas/CreateMessageRequest
+type CreateMessageRequest struct {
+	ReceiverID uuid.UUID `json:"receiver_id"`
+	Content    string    `json:"content"`
 }
 
-// GetID returns the value of ID.
-func (s *CreateUser) GetID() uuid.UUID {
-	return s.ID
+// GetReceiverID returns the value of ReceiverID.
+func (s *CreateMessageRequest) GetReceiverID() uuid.UUID {
+	return s.ReceiverID
 }
 
-// SetID sets the value of ID.
-func (s *CreateUser) SetID(val uuid.UUID) {
-	s.ID = val
+// GetContent returns the value of Content.
+func (s *CreateMessageRequest) GetContent() string {
+	return s.Content
 }
 
-type CreateUserReq struct {
-	Name  string `json:"name"`
-	Email string `json:"email"`
+// SetReceiverID sets the value of ReceiverID.
+func (s *CreateMessageRequest) SetReceiverID(val uuid.UUID) {
+	s.ReceiverID = val
 }
 
-// GetName returns the value of Name.
-func (s *CreateUserReq) GetName() string {
-	return s.Name
+// SetContent sets the value of Content.
+func (s *CreateMessageRequest) SetContent(val string) {
+	s.Content = val
 }
 
-// GetEmail returns the value of Email.
-func (s *CreateUserReq) GetEmail() string {
-	return s.Email
+// Ref: #/components/schemas/DeleteSwapIntentResponse
+type DeleteSwapIntentResponse struct {
+	Removed bool `json:"removed"`
 }
 
-// SetName sets the value of Name.
-func (s *CreateUserReq) SetName(val string) {
-	s.Name = val
+// GetRemoved returns the value of Removed.
+func (s *DeleteSwapIntentResponse) GetRemoved() bool {
+	return s.Removed
 }
 
-// SetEmail sets the value of Email.
-func (s *CreateUserReq) SetEmail(val string) {
-	s.Email = val
+// SetRemoved sets the value of Removed.
+func (s *DeleteSwapIntentResponse) SetRemoved(val bool) {
+	s.Removed = val
 }
 
-// Ref: #/components/responses/Error
+// Ref: #/components/schemas/DirectionalIntentRequest
+type DirectionalIntentRequest struct {
+	Direction DirectionalIntentRequestDirection `json:"direction"`
+}
+
+// GetDirection returns the value of Direction.
+func (s *DirectionalIntentRequest) GetDirection() DirectionalIntentRequestDirection {
+	return s.Direction
+}
+
+// SetDirection sets the value of Direction.
+func (s *DirectionalIntentRequest) SetDirection(val DirectionalIntentRequestDirection) {
+	s.Direction = val
+}
+
+type DirectionalIntentRequestDirection string
+
+const (
+	DirectionalIntentRequestDirectionPrev DirectionalIntentRequestDirection = "prev"
+	DirectionalIntentRequestDirectionNext DirectionalIntentRequestDirection = "next"
+)
+
+// AllValues returns all DirectionalIntentRequestDirection values.
+func (DirectionalIntentRequestDirection) AllValues() []DirectionalIntentRequestDirection {
+	return []DirectionalIntentRequestDirection{
+		DirectionalIntentRequestDirectionPrev,
+		DirectionalIntentRequestDirectionNext,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s DirectionalIntentRequestDirection) MarshalText() ([]byte, error) {
+	switch s {
+	case DirectionalIntentRequestDirectionPrev:
+		return []byte(s), nil
+	case DirectionalIntentRequestDirectionNext:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *DirectionalIntentRequestDirection) UnmarshalText(data []byte) error {
+	switch DirectionalIntentRequestDirection(data) {
+	case DirectionalIntentRequestDirectionPrev:
+		*s = DirectionalIntentRequestDirectionPrev
+		return nil
+	case DirectionalIntentRequestDirectionNext:
+		*s = DirectionalIntentRequestDirectionNext
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Ref: #/components/schemas/DirectionalIntentResponse
+type DirectionalIntentResponse struct {
+	Direction DirectionalIntentResponseDirection `json:"direction"`
+	Enabled   bool                               `json:"enabled"`
+}
+
+// GetDirection returns the value of Direction.
+func (s *DirectionalIntentResponse) GetDirection() DirectionalIntentResponseDirection {
+	return s.Direction
+}
+
+// GetEnabled returns the value of Enabled.
+func (s *DirectionalIntentResponse) GetEnabled() bool {
+	return s.Enabled
+}
+
+// SetDirection sets the value of Direction.
+func (s *DirectionalIntentResponse) SetDirection(val DirectionalIntentResponseDirection) {
+	s.Direction = val
+}
+
+// SetEnabled sets the value of Enabled.
+func (s *DirectionalIntentResponse) SetEnabled(val bool) {
+	s.Enabled = val
+}
+
+type DirectionalIntentResponseDirection string
+
+const (
+	DirectionalIntentResponseDirectionPrev DirectionalIntentResponseDirection = "prev"
+	DirectionalIntentResponseDirectionNext DirectionalIntentResponseDirection = "next"
+)
+
+// AllValues returns all DirectionalIntentResponseDirection values.
+func (DirectionalIntentResponseDirection) AllValues() []DirectionalIntentResponseDirection {
+	return []DirectionalIntentResponseDirection{
+		DirectionalIntentResponseDirectionPrev,
+		DirectionalIntentResponseDirectionNext,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s DirectionalIntentResponseDirection) MarshalText() ([]byte, error) {
+	switch s {
+	case DirectionalIntentResponseDirectionPrev:
+		return []byte(s), nil
+	case DirectionalIntentResponseDirectionNext:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *DirectionalIntentResponseDirection) UnmarshalText(data []byte) error {
+	switch DirectionalIntentResponseDirection(data) {
+	case DirectionalIntentResponseDirectionPrev:
+		*s = DirectionalIntentResponseDirectionPrev
+		return nil
+	case DirectionalIntentResponseDirectionNext:
+		*s = DirectionalIntentResponseDirectionNext
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Ref: #/components/schemas/Error
 type Error struct {
 	Message string `json:"message"`
 }
@@ -94,6 +220,274 @@ func (s *ErrorStatusCode) SetResponse(val Error) {
 	s.Response = val
 }
 
+// Ref: #/components/schemas/JoinRoomRequest
+type JoinRoomRequest struct {
+	Name string  `json:"name"`
+	Lat  float64 `json:"lat"`
+	Lng  float64 `json:"lng"`
+}
+
+// GetName returns the value of Name.
+func (s *JoinRoomRequest) GetName() string {
+	return s.Name
+}
+
+// GetLat returns the value of Lat.
+func (s *JoinRoomRequest) GetLat() float64 {
+	return s.Lat
+}
+
+// GetLng returns the value of Lng.
+func (s *JoinRoomRequest) GetLng() float64 {
+	return s.Lng
+}
+
+// SetName sets the value of Name.
+func (s *JoinRoomRequest) SetName(val string) {
+	s.Name = val
+}
+
+// SetLat sets the value of Lat.
+func (s *JoinRoomRequest) SetLat(val float64) {
+	s.Lat = val
+}
+
+// SetLng sets the value of Lng.
+func (s *JoinRoomRequest) SetLng(val float64) {
+	s.Lng = val
+}
+
+// Ref: #/components/schemas/JoinRoomResponse
+type JoinRoomResponse struct {
+	RoomID   uuid.UUID `json:"room_id"`
+	PlayerID uuid.UUID `json:"player_id"`
+}
+
+// GetRoomID returns the value of RoomID.
+func (s *JoinRoomResponse) GetRoomID() uuid.UUID {
+	return s.RoomID
+}
+
+// GetPlayerID returns the value of PlayerID.
+func (s *JoinRoomResponse) GetPlayerID() uuid.UUID {
+	return s.PlayerID
+}
+
+// SetRoomID sets the value of RoomID.
+func (s *JoinRoomResponse) SetRoomID(val uuid.UUID) {
+	s.RoomID = val
+}
+
+// SetPlayerID sets the value of PlayerID.
+func (s *JoinRoomResponse) SetPlayerID(val uuid.UUID) {
+	s.PlayerID = val
+}
+
+// Ref: #/components/schemas/Location
+type Location struct {
+	Lat float64 `json:"lat"`
+	Lng float64 `json:"lng"`
+}
+
+// GetLat returns the value of Lat.
+func (s *Location) GetLat() float64 {
+	return s.Lat
+}
+
+// GetLng returns the value of Lng.
+func (s *Location) GetLng() float64 {
+	return s.Lng
+}
+
+// SetLat sets the value of Lat.
+func (s *Location) SetLat(val float64) {
+	s.Lat = val
+}
+
+// SetLng sets the value of Lng.
+func (s *Location) SetLng(val float64) {
+	s.Lng = val
+}
+
+// Ref: #/components/schemas/Message
+type Message struct {
+	ID         uuid.UUID `json:"id"`
+	RoomID     uuid.UUID `json:"room_id"`
+	SenderID   uuid.UUID `json:"sender_id"`
+	ReceiverID uuid.UUID `json:"receiver_id"`
+	Content    string    `json:"content"`
+	CreatedAt  time.Time `json:"created_at"`
+}
+
+// GetID returns the value of ID.
+func (s *Message) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetRoomID returns the value of RoomID.
+func (s *Message) GetRoomID() uuid.UUID {
+	return s.RoomID
+}
+
+// GetSenderID returns the value of SenderID.
+func (s *Message) GetSenderID() uuid.UUID {
+	return s.SenderID
+}
+
+// GetReceiverID returns the value of ReceiverID.
+func (s *Message) GetReceiverID() uuid.UUID {
+	return s.ReceiverID
+}
+
+// GetContent returns the value of Content.
+func (s *Message) GetContent() string {
+	return s.Content
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *Message) GetCreatedAt() time.Time {
+	return s.CreatedAt
+}
+
+// SetID sets the value of ID.
+func (s *Message) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetRoomID sets the value of RoomID.
+func (s *Message) SetRoomID(val uuid.UUID) {
+	s.RoomID = val
+}
+
+// SetSenderID sets the value of SenderID.
+func (s *Message) SetSenderID(val uuid.UUID) {
+	s.SenderID = val
+}
+
+// SetReceiverID sets the value of ReceiverID.
+func (s *Message) SetReceiverID(val uuid.UUID) {
+	s.ReceiverID = val
+}
+
+// SetContent sets the value of Content.
+func (s *Message) SetContent(val string) {
+	s.Content = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *Message) SetCreatedAt(val time.Time) {
+	s.CreatedAt = val
+}
+
+// NewOptNilInt returns new OptNilInt with value set to v.
+func NewOptNilInt(v int) OptNilInt {
+	return OptNilInt{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilInt is optional nullable int.
+type OptNilInt struct {
+	Value int
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilInt was set.
+func (o OptNilInt) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilInt) Reset() {
+	var v int
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilInt) SetTo(v int) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilInt) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilInt) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v int
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilInt) Get() (v int, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilInt) Or(d int) int {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptUUID returns new OptUUID with value set to v.
+func NewOptUUID(v uuid.UUID) OptUUID {
+	return OptUUID{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptUUID is optional uuid.UUID.
+type OptUUID struct {
+	Value uuid.UUID
+	Set   bool
+}
+
+// IsSet returns true if OptUUID was set.
+func (o OptUUID) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptUUID) Reset() {
+	var v uuid.UUID
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptUUID) SetTo(v uuid.UUID) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptUUID) Get() (v uuid.UUID, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptUUID) Or(d uuid.UUID) uuid.UUID {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 type PingOK struct {
 	Data io.Reader
 }
@@ -108,50 +502,226 @@ func (s PingOK) Read(p []byte) (n int, err error) {
 	return s.Data.Read(p)
 }
 
-// Ref: #/components/schemas/User
-type User struct {
-	ID      uuid.UUID `json:"id"`
-	Name    string    `json:"name"`
-	Email   string    `json:"email"`
-	IconUrl string    `json:"iconUrl"`
+// Ref: #/components/schemas/Player
+type Player struct {
+	ID         uuid.UUID `json:"id"`
+	Name       string    `json:"name"`
+	OrderIndex int       `json:"order_index"`
+	Location   Location  `json:"location"`
 }
 
 // GetID returns the value of ID.
-func (s *User) GetID() uuid.UUID {
+func (s *Player) GetID() uuid.UUID {
 	return s.ID
 }
 
 // GetName returns the value of Name.
-func (s *User) GetName() string {
+func (s *Player) GetName() string {
 	return s.Name
 }
 
-// GetEmail returns the value of Email.
-func (s *User) GetEmail() string {
-	return s.Email
+// GetOrderIndex returns the value of OrderIndex.
+func (s *Player) GetOrderIndex() int {
+	return s.OrderIndex
 }
 
-// GetIconUrl returns the value of IconUrl.
-func (s *User) GetIconUrl() string {
-	return s.IconUrl
+// GetLocation returns the value of Location.
+func (s *Player) GetLocation() Location {
+	return s.Location
 }
 
 // SetID sets the value of ID.
-func (s *User) SetID(val uuid.UUID) {
+func (s *Player) SetID(val uuid.UUID) {
 	s.ID = val
 }
 
 // SetName sets the value of Name.
-func (s *User) SetName(val string) {
+func (s *Player) SetName(val string) {
 	s.Name = val
 }
 
-// SetEmail sets the value of Email.
-func (s *User) SetEmail(val string) {
-	s.Email = val
+// SetOrderIndex sets the value of OrderIndex.
+func (s *Player) SetOrderIndex(val int) {
+	s.OrderIndex = val
 }
 
-// SetIconUrl sets the value of IconUrl.
-func (s *User) SetIconUrl(val string) {
-	s.IconUrl = val
+// SetLocation sets the value of Location.
+func (s *Player) SetLocation(val Location) {
+	s.Location = val
+}
+
+// Ref: #/components/schemas/RoomStateResponse
+type RoomStateResponse struct {
+	Status RoomStatus `json:"status"`
+	// Remaining seconds. null when not started.
+	TimeLeft          OptNilInt   `json:"time_left"`
+	IntersectionCount int         `json:"intersection_count"`
+	Players           []Player    `json:"players"`
+	MyIntents         []uuid.UUID `json:"my_intents"`
+	ReceivedIntents   []uuid.UUID `json:"received_intents"`
+}
+
+// GetStatus returns the value of Status.
+func (s *RoomStateResponse) GetStatus() RoomStatus {
+	return s.Status
+}
+
+// GetTimeLeft returns the value of TimeLeft.
+func (s *RoomStateResponse) GetTimeLeft() OptNilInt {
+	return s.TimeLeft
+}
+
+// GetIntersectionCount returns the value of IntersectionCount.
+func (s *RoomStateResponse) GetIntersectionCount() int {
+	return s.IntersectionCount
+}
+
+// GetPlayers returns the value of Players.
+func (s *RoomStateResponse) GetPlayers() []Player {
+	return s.Players
+}
+
+// GetMyIntents returns the value of MyIntents.
+func (s *RoomStateResponse) GetMyIntents() []uuid.UUID {
+	return s.MyIntents
+}
+
+// GetReceivedIntents returns the value of ReceivedIntents.
+func (s *RoomStateResponse) GetReceivedIntents() []uuid.UUID {
+	return s.ReceivedIntents
+}
+
+// SetStatus sets the value of Status.
+func (s *RoomStateResponse) SetStatus(val RoomStatus) {
+	s.Status = val
+}
+
+// SetTimeLeft sets the value of TimeLeft.
+func (s *RoomStateResponse) SetTimeLeft(val OptNilInt) {
+	s.TimeLeft = val
+}
+
+// SetIntersectionCount sets the value of IntersectionCount.
+func (s *RoomStateResponse) SetIntersectionCount(val int) {
+	s.IntersectionCount = val
+}
+
+// SetPlayers sets the value of Players.
+func (s *RoomStateResponse) SetPlayers(val []Player) {
+	s.Players = val
+}
+
+// SetMyIntents sets the value of MyIntents.
+func (s *RoomStateResponse) SetMyIntents(val []uuid.UUID) {
+	s.MyIntents = val
+}
+
+// SetReceivedIntents sets the value of ReceivedIntents.
+func (s *RoomStateResponse) SetReceivedIntents(val []uuid.UUID) {
+	s.ReceivedIntents = val
+}
+
+// Ref: #/components/schemas/RoomStatus
+type RoomStatus string
+
+const (
+	RoomStatusMatching RoomStatus = "matching"
+	RoomStatusPlaying  RoomStatus = "playing"
+	RoomStatusFinished RoomStatus = "finished"
+)
+
+// AllValues returns all RoomStatus values.
+func (RoomStatus) AllValues() []RoomStatus {
+	return []RoomStatus{
+		RoomStatusMatching,
+		RoomStatusPlaying,
+		RoomStatusFinished,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s RoomStatus) MarshalText() ([]byte, error) {
+	switch s {
+	case RoomStatusMatching:
+		return []byte(s), nil
+	case RoomStatusPlaying:
+		return []byte(s), nil
+	case RoomStatusFinished:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *RoomStatus) UnmarshalText(data []byte) error {
+	switch RoomStatus(data) {
+	case RoomStatusMatching:
+		*s = RoomStatusMatching
+		return nil
+	case RoomStatusPlaying:
+		*s = RoomStatusPlaying
+		return nil
+	case RoomStatusFinished:
+		*s = RoomStatusFinished
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+type SubscribeRoomStreamOK struct {
+	Data io.Reader
+}
+
+// Read reads data from the Data reader.
+//
+// Kept to satisfy the io.Reader interface.
+func (s SubscribeRoomStreamOK) Read(p []byte) (n int, err error) {
+	if s.Data == nil {
+		return 0, io.EOF
+	}
+	return s.Data.Read(p)
+}
+
+// Ref: #/components/schemas/SwapIntentRequest
+type SwapIntentRequest struct {
+	TargetPlayerID uuid.UUID `json:"target_player_id"`
+}
+
+// GetTargetPlayerID returns the value of TargetPlayerID.
+func (s *SwapIntentRequest) GetTargetPlayerID() uuid.UUID {
+	return s.TargetPlayerID
+}
+
+// SetTargetPlayerID sets the value of TargetPlayerID.
+func (s *SwapIntentRequest) SetTargetPlayerID(val uuid.UUID) {
+	s.TargetPlayerID = val
+}
+
+// Ref: #/components/schemas/SwapIntentResponse
+type SwapIntentResponse struct {
+	// True when both sides were ON and swap executed.
+	Matched    bool       `json:"matched"`
+	RoomStatus RoomStatus `json:"room_status"`
+}
+
+// GetMatched returns the value of Matched.
+func (s *SwapIntentResponse) GetMatched() bool {
+	return s.Matched
+}
+
+// GetRoomStatus returns the value of RoomStatus.
+func (s *SwapIntentResponse) GetRoomStatus() RoomStatus {
+	return s.RoomStatus
+}
+
+// SetMatched sets the value of Matched.
+func (s *SwapIntentResponse) SetMatched(val bool) {
+	s.Matched = val
+}
+
+// SetRoomStatus sets the value of RoomStatus.
+func (s *SwapIntentResponse) SetRoomStatus(val RoomStatus) {
+	s.RoomStatus = val
 }
