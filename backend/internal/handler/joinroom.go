@@ -12,11 +12,18 @@ import (
 
 // JoinRoom implements [api.Handler].
 func (h *Handler) JoinRoom(ctx context.Context, req *api.JoinRoomRequest) (*api.JoinRoomResponse, error) {
+	if req == nil {
+		return nil, &api.ErrorStatus{
+			Code:    api.ErrorStatusCodeBadRequest,
+			Message: "request body is required",
+		}
+	}
+
 	const maxPlayersPerRoom = 4
 
 	var (
-		roomID   uuid.UUID
-		playerID uuid.UUID
+		roomID      uuid.UUID
+		playerID    uuid.UUID
 		joinedCount int
 	)
 
