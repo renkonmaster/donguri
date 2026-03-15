@@ -41,8 +41,12 @@ function formatTime(date: Date): string {
   <div
     class="absolute inset-0 z-10 flex justify-center bg-black/40"
     :style="themeVars"
+    @click="emit('close')"
   >
-    <div class="flex w-full max-w-lg flex-col">
+    <div
+      class="flex w-full max-w-lg flex-col"
+      @click.stop
+    >
       <div class="flex shrink-0 items-center gap-3 px-4 py-3">
         <button
           class="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gray-700/80 text-xl text-white backdrop-blur-sm transition-colors hover:bg-gray-600/80"

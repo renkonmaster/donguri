@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue';
+import { ref, reactive, computed, watch } from 'vue';
 import GameMap from '@/components/GameMap.vue';
 import ChatOverlay from '@/components/ChatOverlay.vue';
 import type { MapClickPayload, MapPoint } from '@/types/map';
@@ -47,6 +47,28 @@ const currentMessages = computed(() => {
   );
 });
 
+// playerId → その会話で既読済みのメッセージ数
+const seenCount = reactive(new Map<string, number>());
+
+// オーバーレイが開いている間・新着が届いた瞬間も既読にする
+watch([selectedPlayerId, currentMessages], () => {
+  const id = selectedPlayerId.value;
+  if (id) seenCount.set(id, currentMessages.value.length);
+});
+
+const unreadPlayerIds = computed(() =>
+  props.players
+    .filter(p => p.id !== props.myPlayerId)
+    .filter((p) => {
+      const total = props.messages.filter(
+        m => (m.senderId === p.id && m.receiverId === props.myPlayerId)
+          || (m.senderId === props.myPlayerId && m.receiverId === p.id),
+      ).length;
+      return total > (seenCount.get(p.id) ?? 0);
+    })
+    .map(p => p.id),
+);
+
 // GameMap は order_index 順に並んだ MapPoint[] を受け取る
 const mapPoints = computed<MapPoint[]>(() =>
   [...props.players]
@@ -83,6 +105,7 @@ function onToggleSwap() {
     <GameMap
       :points="mapPoints"
       :highlighted-id="myPlayerId"
+      :unread-ids="unreadPlayerIds"
       show-line
       @click="onMapClick"
     />

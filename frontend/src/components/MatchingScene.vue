@@ -3,7 +3,7 @@ import GameMap from '@/components/GameMap.vue';
 import type { MapPoint } from '@/types/map';
 
 const props = defineProps<{
-  currentCount: number;
+  myPlayerId: string;
   maxCount: number;
   points: MapPoint[];
 }>();
@@ -14,13 +14,15 @@ const props = defineProps<{
     <div class="flex-1 overflow-hidden">
       <GameMap
         :points="props.points"
+        :highlighted-id="props.myPlayerId"
         :show-line="false"
+        auto-fit
       />
     </div>
 
     <div class="relative border-t border-gray-200 bg-white px-4 py-3">
       <span class="block text-center text-lg font-medium text-gray-700">
-        {{ props.currentCount }}/{{ props.maxCount }} 人参加
+        {{ props.points.length }}/{{ props.maxCount }} 人参加
       </span>
 
       <!-- ハッカソン中は退出機能未実装のため常にグレーアウト -->

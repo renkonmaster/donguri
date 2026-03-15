@@ -3,11 +3,12 @@ import { ref, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import GameScene from '@/components/GameScene.vue';
-// import MatchingScene from '@/components/MatchingScene.vue'; // 別ブランチで開発中
+import MatchingScene from '@/components/MatchingScene.vue';
 import type { Player, Message } from '@/types/game';
 
 type Scene = 'matching' | 'game';
 
+// デバッグ用: URL ハッシュでシーンを切り替え (/game#matching → matching, /game → game)
 const route = useRoute();
 const scene = computed<Scene>(() => route.hash === '#matching' ? 'matching' : 'game');
 
@@ -52,6 +53,15 @@ function onSendMessage(receiverId: string, content: string) {
 function onToggleSwap(targetPlayerId: string, needsSwap: boolean) {
   console.log('[GamePage] toggleSwap', targetPlayerId, needsSwap);
 }
+
+// マッチング画面用スタブ
+const matchingMaxCount = 6;
+const matchingPoints = [players[0], players[2], players[3], players.find(p => p.id === myPlayerId)!].map(p => ({
+  id: p.id,
+  lat: p.lat,
+  lng: p.lng,
+  name: p.name,
+}));
 </script>
 
 <template>
@@ -65,7 +75,12 @@ function onToggleSwap(targetPlayerId: string, needsSwap: boolean) {
         @send-message="onSendMessage"
         @toggle-swap="onToggleSwap"
       />
-      <!-- <MatchingScene v-else-if="scene === 'matching'" /> -->
+      <MatchingScene
+        v-else-if="scene === 'matching'"
+        :my-player-id="myPlayerId"
+        :max-count="matchingMaxCount"
+        :points="matchingPoints"
+      />
     </div>
   </DefaultLayout>
 </template>
