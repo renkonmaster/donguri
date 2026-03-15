@@ -1,20 +1,15 @@
 package main
 
 import (
-	_ "embed"
-	"fmt"
 	"log"
 	"net/http"
 	"strings"
 
-	"github.com/ras0q/goalie"
 	"github.com/renkonmaster/donguri/infrastructure/config"
 	"github.com/renkonmaster/donguri/infrastructure/database"
 	"github.com/renkonmaster/donguri/infrastructure/injector"
+	"github.com/ras0q/goalie"
 )
-
-//go:embed db/init.sql/01_schema.sql
-var schemaSQL string
 
 // flushingResponseWriter は Write のたびに Flush を呼ぶ ResponseWriter ラッパーです。
 // ogen の SSE エンコーダーが io.Copy を使うため Flush が呼ばれず
@@ -63,15 +58,6 @@ func run() (err error) {
 	if err != nil {
 		return err
 	}
-
-	// ---------------------
-	// 自動初期化スキームの実行
-	// ---------------------
-	if err := db.Exec(schemaSQL).Error; err != nil {
-		return fmt.Errorf("failed to execute schema.sql: %w", err)
-	}
-	// ---------------------
-
 	sqlDB, err := db.DB()
 	if err != nil {
 		return err
