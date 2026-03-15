@@ -35,11 +35,6 @@ func (h *Handler) DeleteSwapIntent(ctx context.Context, params api.DeleteSwapInt
 	panic("unimplemented")
 }
 
-// GetRoom implements [api.Handler].
-func (h *Handler) GetRoom(ctx context.Context, params api.GetRoomParams) (*api.RoomStateResponse, error) {
-	panic("unimplemented")
-}
-
 // PatchMyDirectionalIntent implements [api.Handler].
 func (h *Handler) PatchMyDirectionalIntent(ctx context.Context, req *api.DirectionalIntentRequest, params api.PatchMyDirectionalIntentParams) (*api.DirectionalIntentResponse, error) {
 	panic("unimplemented")
