@@ -5,7 +5,7 @@
 - Language: Go
 - API スキーマ: ogen (OpenAPI)
 - DB: PostgreSQL (PostGIS)
-- DB アクセス: sqlx
+- DB アクセス: GORM
 - Migration: goose
 - Linter: golangci-lint v2
 
