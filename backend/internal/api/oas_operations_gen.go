@@ -11,6 +11,7 @@ const (
 	DeleteSwapIntentOperation          OperationName = "DeleteSwapIntent"
 	GetMessagesOperation               OperationName = "GetMessages"
 	GetRoomOperation                   OperationName = "GetRoom"
+	GetRoomIntersectionsOperation      OperationName = "GetRoomIntersections"
 	JoinRoomOperation                  OperationName = "JoinRoom"
 	PatchMyDirectionalIntentOperation  OperationName = "PatchMyDirectionalIntent"
 	PingOperation                      OperationName = "Ping"
