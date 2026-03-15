@@ -17,7 +17,7 @@
 *-snapshots/* binary
 test-results/* binary
 
-pnpm-lock.yaml linguist-generated
+**/pnpm-lock.yaml linguist-generated
 skills-lock.json linguist-generated
-go.sum linguist-generated
+**/go.sum linguist-generated
 vendor/** linguist-vendored
