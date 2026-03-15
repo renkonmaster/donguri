@@ -1,49 +1,81 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import GameScene from '@/components/GameScene.vue';
 import MatchingScene from '@/components/MatchingScene.vue';
 import type { Player, Message } from '@/types/game';
 
-type Scene = 'matching' | 'game';
-
-// デバッグ用: URL ハッシュでシーンを切り替え (/game#matching → matching, /game → game)
 const route = useRoute();
-const scene = computed<Scene>(() => route.hash === '#matching' ? 'matching' : 'game');
+const router = useRouter();
 
-const myPlayerId = 'p5';
+const roomId = route.query.room_id as string;
+const playerId = route.query.player_id as string;
 
-const players: Player[] = [
-  { id: 'p1', name: 'Alice', orderIndex: 0, lat: -33.868, lng: 151.209 },
-  { id: 'p2', name: 'Bob', orderIndex: 1, lat: 40.712, lng: -74.006 },
-  { id: 'p3', name: 'Carol', orderIndex: 2, lat: 55.751, lng: 37.617 },
-  { id: 'p4', name: 'Dave', orderIndex: 3, lat: -23.550, lng: -46.633 },
-  { id: 'p5', name: 'りすりす', orderIndex: 4, lat: 35.689, lng: 139.692 },
-  { id: 'p6', name: 'Frank', orderIndex: 5, lat: 1.352, lng: 103.820 },
-];
+const roomStatus = ref<'matching' | 'playing' | 'finished'>('matching');
+const players = ref<Player[]>([]);
+const messages = ref<Message[]>([]);
 
-const messages = ref<Message[]>([
-  {
-    id: 'm1',
-    senderId: 'p4',
-    receiverId: 'p5',
-    content: 'ねえ、交換しようよ！',
-    createdAt: new Date('2025-01-01T12:00:00'),
-  },
-  {
-    id: 'm2',
-    senderId: 'p5',
-    receiverId: 'p4',
-    content: 'いいよ、交換ボタン押すね',
-    createdAt: new Date('2025-01-01T12:00:30'),
-  },
-]);
+type ApiPlayer = {
+  id: string;
+  name: string;
+  order_index: number;
+  location: { lat: number; lng: number };
+};
+
+function mapPlayer(p: ApiPlayer): Player {
+  return {
+    id: p.id,
+    name: p.name,
+    orderIndex: p.order_index,
+    lat: p.location.lat,
+    lng: p.location.lng,
+  };
+}
+
+async function fetchRoomState() {
+  const res = await fetch(`/api/rooms/${roomId}`, {
+    headers: { 'X-Player-ID': playerId },
+  });
+  if (!res.ok) return;
+  const data = await res.json() as {
+    status: 'matching' | 'playing' | 'finished';
+    players: ApiPlayer[];
+  };
+  roomStatus.value = data.status;
+  players.value = data.players.map(mapPlayer);
+}
+
+const matchingPoints = computed(() =>
+  players.value.map(p => ({ id: p.id, lat: p.lat, lng: p.lng, name: p.name })),
+);
+
+let sse: EventSource | null = null;
+
+onMounted(async () => {
+  if (!roomId || !playerId) {
+    router.replace('/');
+    return;
+  }
+  await fetchRoomState();
+  sse = new EventSource(`/api/rooms/${roomId}/stream?player_id=${playerId}`);
+  sse.addEventListener('room_started', () => {
+    void fetchRoomState();
+  });
+  sse.addEventListener('room_updated', () => {
+    void fetchRoomState();
+  });
+});
+
+onUnmounted(() => {
+  sse?.close();
+});
 
 function onSendMessage(receiverId: string, content: string) {
+  // TODO: POST /api/rooms/{room_id}/messages に接続する
   messages.value.push({
     id: crypto.randomUUID(),
-    senderId: myPlayerId,
+    senderId: playerId,
     receiverId,
     content,
     createdAt: new Date(),
@@ -51,34 +83,26 @@ function onSendMessage(receiverId: string, content: string) {
 }
 
 function onToggleSwap(targetPlayerId: string, needsSwap: boolean) {
+  // TODO: PUT /api/rooms/{room_id}/connections/{target_id} に接続する
   console.log('[GamePage] toggleSwap', targetPlayerId, needsSwap);
 }
-
-// マッチング画面用スタブ
-const matchingMaxCount = 6;
-const matchingPoints = [players[0], players[2], players[3], players.find(p => p.id === myPlayerId)!].map(p => ({
-  id: p.id,
-  lat: p.lat,
-  lng: p.lng,
-  name: p.name,
-}));
 </script>
 
 <template>
   <DefaultLayout>
     <div class="h-svh">
       <GameScene
-        v-if="scene === 'game'"
-        :my-player-id="myPlayerId"
+        v-if="roomStatus !== 'matching'"
+        :my-player-id="playerId"
         :players="players"
         :messages="messages"
         @send-message="onSendMessage"
         @toggle-swap="onToggleSwap"
       />
       <MatchingScene
-        v-else-if="scene === 'matching'"
-        :my-player-id="myPlayerId"
-        :max-count="matchingMaxCount"
+        v-else
+        :my-player-id="playerId"
+        :max-count="4"
         :points="matchingPoints"
       />
     </div>

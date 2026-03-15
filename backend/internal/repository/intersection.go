@@ -35,10 +35,10 @@ func (r *Repository) GetIntersectingEdgePairs(ctx context.Context, roomID uuid.U
 	}
 
 	type row struct {
-		FirstStart int     `gorm:"column:first_start"`
-		FirstEnd   int     `gorm:"column:first_end"`
-		SecondStart int    `gorm:"column:second_start"`
-		SecondEnd   int    `gorm:"column:second_end"`
+		FirstStart  int     `gorm:"column:first_start"`
+		FirstEnd    int     `gorm:"column:first_end"`
+		SecondStart int     `gorm:"column:second_start"`
+		SecondEnd   int     `gorm:"column:second_end"`
 		Lat         float64 `gorm:"column:intersection_lat"`
 		Lng         float64 `gorm:"column:intersection_lng"`
 	}
@@ -50,8 +50,8 @@ func (r *Repository) GetIntersectingEdgePairs(ctx context.Context, roomID uuid.U
 				order_index AS start_order,
 				LEAD(order_index) OVER (ORDER BY order_index) AS end_order,
 				ST_MakeLine(
-					ST_GeomFromEWKT(location),
-					LEAD(ST_GeomFromEWKT(location)) OVER (ORDER BY order_index)
+					location::geometry,
+					LEAD(location::geometry) OVER (ORDER BY order_index)
 				) AS geom
 			FROM players
 			WHERE room_id = ?

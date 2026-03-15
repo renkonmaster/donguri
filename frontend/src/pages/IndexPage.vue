@@ -7,6 +7,8 @@ import phoneBg from '@/assets/phone.png';
 
 const router = useRouter();
 const playerName = ref('');
+const loading = ref(false);
+const errorMessage = ref('');
 
 const mobileQuery = window.matchMedia('(max-width: 640px)');
 const isMobile = ref(mobileQuery.matches);
@@ -21,6 +23,31 @@ onUnmounted(() => mobileQuery.removeEventListener('change', onQueryChange));
 const bgImage = computed(() =>
   isMobile.value ? phoneBg : communicationBg,
 );
+
+async function startMatching() {
+  if (playerName.value.trim() === '') return;
+  loading.value = true;
+  errorMessage.value = '';
+  try {
+    // TODO: GPS 取得に切り替える
+    const lat = Math.random() * 130 - 60;
+    const lng = Math.random() * 360 - 180;
+    const res = await fetch('/api/rooms/join', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: playerName.value.trim(), lat, lng }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({})) as { message?: string };
+      throw new Error(data.message ?? 'サーバーエラーが発生しました');
+    }
+    const data = await res.json() as { room_id: string; player_id: string };
+    await router.push({ path: '/game', query: { room_id: data.room_id, player_id: data.player_id } });
+  } catch (e) {
+    errorMessage.value = e instanceof Error ? e.message : 'エラーが発生しました';
+    loading.value = false;
+  }
+}
 </script>
 
 <template>
@@ -49,15 +76,21 @@ const bgImage = computed(() =>
             type="text"
             placeholder="あなたの名前"
             maxlength="20"
-            class="rounded-xl border border-white/30 bg-white/20 px-4 py-3 text-center text-white placeholder-white/50 outline-none backdrop-blur-sm focus:border-white/60 focus:bg-white/25"
+            :disabled="loading"
+            class="rounded-xl border border-white/30 bg-white/20 px-4 py-3 text-center text-white placeholder-white/50 outline-none backdrop-blur-sm focus:border-white/60 focus:bg-white/25 disabled:opacity-60"
           >
-          <!-- TODO: バックエンド接続後は GPS 取得 → POST /api/rooms/join → 遷移に変更する -->
+          <p
+            v-if="errorMessage"
+            class="text-sm text-red-300"
+          >
+            {{ errorMessage }}
+          </p>
           <button
-            :disabled="playerName.trim() === ''"
+            :disabled="playerName.trim() === '' || loading"
             class="rounded-xl bg-emerald-500 py-3 font-semibold text-white shadow transition-colors hover:bg-emerald-400 active:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-40"
-            @click="router.push('/game')"
+            @click="startMatching"
           >
-            マッチングを始める
+            {{ loading ? 'マッチング中...' : 'マッチングを始める' }}
           </button>
         </div>
       </div>
