@@ -6,10 +6,10 @@ import (
 	"github.com/ras0q/go-backend-template/internal/repository"
 	photo_service "github.com/ras0q/go-backend-template/internal/service/photo"
 
-	"github.com/jmoiron/sqlx"
+	"gorm.io/gorm"
 )
 
-func InjectServer(db *sqlx.DB) (*api.Server, error) {
+func InjectServer(db *gorm.DB) (*api.Server, error) {
 	photo := photo_service.NewPhotoService()
 	repo := repository.New(db)
 	h := handler.New(photo, repo)
