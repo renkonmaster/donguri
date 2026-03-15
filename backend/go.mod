@@ -1,4 +1,4 @@
-module github.com/ras0q/go-backend-template
+module github.com/renkonmaster/donguri
 
 go 1.26.0
 

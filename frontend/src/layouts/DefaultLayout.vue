@@ -1,6 +1,3 @@
-<script setup lang="ts">
-</script>
-
 <template>
   <div class="min-h-screen bg-white text-gray-900">
     <header class="border-b border-gray-200 px-6 py-4">
