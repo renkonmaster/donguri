@@ -8,30 +8,66 @@ import (
 
 // Handler handles operations described by OpenAPI v3 specification.
 type Handler interface {
-	// CreateUser implements createUser operation.
+	// CreateMessage implements createMessage operation.
 	//
-	// Create a user.
+	// Send message to adjacent player.
 	//
-	// POST /api/v1/users
-	CreateUser(ctx context.Context, req *CreateUserReq) (*CreateUser, error)
-	// GetUser implements getUser operation.
+	// POST /api/rooms/{room_id}/messages
+	CreateMessage(ctx context.Context, req *CreateMessageRequest, params CreateMessageParams) (*Message, error)
+	// CreateSwapIntent implements createSwapIntent operation.
 	//
-	// Get user by ID.
+	// Set swap intent ON by target player ID.
 	//
-	// GET /api/v1/users/{userID}
-	GetUser(ctx context.Context, params GetUserParams) (*User, error)
-	// GetUsers implements getUsers operation.
+	// POST /api/rooms/{room_id}/swaps/intents
+	CreateSwapIntent(ctx context.Context, req *SwapIntentRequest, params CreateSwapIntentParams) (*SwapIntentResponse, error)
+	// DeleteMyDirectionalIntent implements deleteMyDirectionalIntent operation.
 	//
-	// Get all users.
+	// Set directional swap intent OFF (prev or next).
 	//
-	// GET /api/v1/users
-	GetUsers(ctx context.Context) ([]User, error)
+	// DELETE /api/rooms/{room_id}/players/me/intent
+	DeleteMyDirectionalIntent(ctx context.Context, req *DirectionalIntentRequest, params DeleteMyDirectionalIntentParams) (*DirectionalIntentResponse, error)
+	// DeleteSwapIntent implements deleteSwapIntent operation.
+	//
+	// Cancel swap intent by target player ID.
+	//
+	// DELETE /api/rooms/{room_id}/swaps/intents/{target_player_id}
+	DeleteSwapIntent(ctx context.Context, params DeleteSwapIntentParams) (*DeleteSwapIntentResponse, error)
+	// GetMessages implements getMessages operation.
+	//
+	// Get message history related to myself.
+	//
+	// GET /api/rooms/{room_id}/messages
+	GetMessages(ctx context.Context, params GetMessagesParams) ([]Message, error)
+	// GetRoom implements getRoom operation.
+	//
+	// Get room state.
+	//
+	// GET /api/rooms/{room_id}
+	GetRoom(ctx context.Context, params GetRoomParams) (*RoomStateResponse, error)
+	// JoinRoom implements joinRoom operation.
+	//
+	// Join matching queue.
+	//
+	// POST /api/rooms/join
+	JoinRoom(ctx context.Context, req *JoinRoomRequest) (*JoinRoomResponse, error)
+	// PatchMyDirectionalIntent implements patchMyDirectionalIntent operation.
+	//
+	// Set directional swap intent ON (prev or next).
+	//
+	// PATCH /api/rooms/{room_id}/players/me/intent
+	PatchMyDirectionalIntent(ctx context.Context, req *DirectionalIntentRequest, params PatchMyDirectionalIntentParams) (*DirectionalIntentResponse, error)
 	// Ping implements ping operation.
 	//
-	// Ping API.
+	// Ping.
 	//
 	// GET /api/v1/ping
 	Ping(ctx context.Context) (PingOK, error)
+	// SubscribeRoomStream implements subscribeRoomStream operation.
+	//
+	// Subscribe room events (SSE).
+	//
+	// GET /api/rooms/{room_id}/stream
+	SubscribeRoomStream(ctx context.Context, params SubscribeRoomStreamParams) (SubscribeRoomStreamOK, error)
 	// NewError creates *ErrorStatusCode from error returned by handler.
 	//
 	// Used for common default response.

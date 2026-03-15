@@ -6,8 +6,14 @@ package api
 type OperationName = string
 
 const (
-	CreateUserOperation OperationName = "CreateUser"
-	GetUserOperation    OperationName = "GetUser"
-	GetUsersOperation   OperationName = "GetUsers"
-	PingOperation       OperationName = "Ping"
+	CreateMessageOperation             OperationName = "CreateMessage"
+	CreateSwapIntentOperation          OperationName = "CreateSwapIntent"
+	DeleteMyDirectionalIntentOperation OperationName = "DeleteMyDirectionalIntent"
+	DeleteSwapIntentOperation          OperationName = "DeleteSwapIntent"
+	GetMessagesOperation               OperationName = "GetMessages"
+	GetRoomOperation                   OperationName = "GetRoom"
+	JoinRoomOperation                  OperationName = "JoinRoom"
+	PatchMyDirectionalIntentOperation  OperationName = "PatchMyDirectionalIntent"
+	PingOperation                      OperationName = "Ping"
+	SubscribeRoomStreamOperation       OperationName = "SubscribeRoomStream"
 )

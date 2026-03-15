@@ -1,0 +1,53 @@
+{
+  "name": "donguri-frontend",
+  "type": "module",
+  "private": true,
+  "packageManager": "pnpm@10.32.1+sha512.a706938f0e89ac1456b6563eab4edf1d1faf3368d1191fc5c59790e96dc918e4456ab2e67d613de1043d2e8c81f87303e6b40d4ffeca9df15ef1ad567348f2be",
+  "engines": {
+    "node": ">=24.14.0"
+  },
+  "scripts": {
+    "clean": "rimraf node_modules dist .eslintcache .stylelintcache",
+    "dev": "vite",
+    "typecheck": "vue-tsc --noEmit",
+    "build": "vite-ssg build",
+    "preview": "vite preview",
+    "lint": "run-p lint:check:*",
+    "lint:fix": "run-s --continue-on-error lint:fix:*",
+    "lint:check:eslint": "eslint --cache .",
+    "lint:fix:eslint": "eslint --cache --fix .",
+    "lint:check:stylelint": "stylelint --ignore-path .gitignore --cache \"**/*.{vue,css}\"",
+    "lint:fix:stylelint": "stylelint --ignore-path .gitignore --cache --fix \"**/*.{vue,css}\""
+  },
+  "dependencies": {
+    "@unhead/vue": "^2.1.12",
+    "vite-ssg": "^28.3.0",
+    "vue": "^3.5.30",
+    "vue-router": "^5.0.3"
+  },
+  "devDependencies": {
+    "@eslint-community/eslint-plugin-eslint-comments": "^4.7.1",
+    "@stylistic/eslint-plugin": "^5.10.0",
+    "@stylistic/stylelint-config": "^4.0.0",
+    "@tailwindcss/vite": "^4.2.1",
+    "@types/node": "^25.5.0",
+    "@vitejs/plugin-vue": "^6.0.5",
+    "eslint": "^10.0.3",
+    "eslint-plugin-baseline-js": "^0.6.1",
+    "eslint-plugin-vue": "^10.8.0",
+    "eslint-plugin-vue-scoped-css": "^3.0.0",
+    "jiti": "^2.6.1",
+    "npm-run-all2": "^8.0.4",
+    "rimraf": "^6.1.3",
+    "stylelint": "^17.4.0",
+    "stylelint-config-standard-vue": "^1.0.0",
+    "stylelint-config-tailwindcss": "^1.0.1",
+    "stylelint-plugin-use-baseline": "^1.2.7",
+    "tailwindcss": "^4.2.1",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.57.0",
+    "vite": "^8.0.0",
+    "vue-eslint-parser": "^10.4.0",
+    "vue-tsc": "^3.2.5"
+  }
+}

@@ -1,26 +1,10 @@
 package database
 
-import (
-	"database/sql"
-	"embed"
-	"fmt"
+import "database/sql"
 
-	"github.com/pressly/goose/v3"
-)
-
-//go:embed migrations/*.sql
-var embedMigrations embed.FS
-
-func migrateTables(db *sql.DB) error {
-	goose.SetBaseFS(embedMigrations)
-
-	if err := goose.SetDialect("postgres"); err != nil {
-		return fmt.Errorf("set dialect: %w", err)
-	}
-
-	if err := goose.Up(db, "migrations"); err != nil {
-		return fmt.Errorf("up migration: %w", err)
-	}
-
+// TODO: 初期開発段階のためマイグレーション不要。このファイルごと削除し、
+// gorm.go の SetupGORM からの migrateTables 呼び出しも削除すること。
+// スキーマ変更時は既存テーブルを DROP して再作成する。
+func migrateTables(_ *sql.DB) error {
 	return nil
 }
