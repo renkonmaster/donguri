@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useRoute } from 'vue-router';
+import { useHead } from '@unhead/vue';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import GameScene from '@/components/GameScene.vue';
 import MatchingScene from '@/components/MatchingScene.vue';
@@ -11,6 +12,29 @@ type Scene = 'matching' | 'game';
 // デバッグ用: URL ハッシュでシーンを切り替え (/game#matching → matching, /game → game)
 const route = useRoute();
 const scene = computed<Scene>(() => route.hash === '#matching' ? 'matching' : 'game');
+
+const baseUrl = import.meta.env.VITE_PUBLIC_URL;
+
+useHead({
+  title: 'InterKnot | ゲームページ',
+  meta: [
+    { name: 'description', content: 'InterKnotのゲームページです。マッチング状況や参加者の位置情報を確認できます。' },
+
+    { property: 'og:title', content: 'InterKnot | ゲームページ' },
+    { property: 'og:description', content: 'InterKnotのゲームページです。マッチング状況や参加者の位置情報を確認できます。' },
+    { property: 'og:type', content: 'website' },
+    { property: 'og:url', content: `${baseUrl}${route.path}` },
+    { property: 'og:image', content: `${baseUrl}/ogp.png` },
+
+    { name: 'twitter:card', content: 'summary_large_image' },
+    { name: 'twitter:title', content: 'InterKnot | ゲームページ' },
+    { name: 'twitter:description', content: 'InterKnotのゲームページです。マッチング状況や参加者の位置情報を確認できます。' },
+    { name: 'twitter:image', content: `${baseUrl}/ogp.png` },
+  ],
+  link: [
+    { rel: 'canonical', href: `${baseUrl}${route.path}` },
+  ],
+});
 
 const myPlayerId = 'p5';
 
