@@ -29,9 +29,5 @@ func SetupGORM(dsn string) (*gorm.DB, error) {
 		return nil, err
 	}
 
-	if err := migrateTables(sqlDB); err != nil {
-		return nil, err
-	}
-
 	return db, nil
 }
