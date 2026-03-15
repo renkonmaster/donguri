@@ -1,13 +1,13 @@
 package repository
 
 import (
-	"github.com/jmoiron/sqlx"
+	"gorm.io/gorm"
 )
 
 type Repository struct {
-	db *sqlx.DB
+	db *gorm.DB
 }
 
-func New(db *sqlx.DB) *Repository {
+func New(db *gorm.DB) *Repository {
 	return &Repository{db: db}
 }

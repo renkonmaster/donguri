@@ -7,22 +7,15 @@ import (
 
 	"github.com/renkonmaster/donguri/internal/api"
 	"github.com/renkonmaster/donguri/internal/repository"
-	"github.com/renkonmaster/donguri/internal/service/photo"
 )
 
 type Handler struct {
-	photo *photo.Service
-	repo  *repository.Repository
+	api.UnimplementedHandler
+	repo *repository.Repository
 }
 
-func New(
-	photo *photo.Service,
-	repo *repository.Repository,
-) *Handler {
-	return &Handler{
-		photo,
-		repo,
-	}
+func New(repo *repository.Repository) *Handler {
+	return &Handler{repo: repo}
 }
 
 func (h *Handler) NewError(ctx context.Context, err error) *api.ErrorStatusCode {

@@ -13,39 +13,93 @@ type UnimplementedHandler struct{}
 
 var _ Handler = UnimplementedHandler{}
 
-// CreateUser implements createUser operation.
+// CreateMessage implements createMessage operation.
 //
-// Create a user.
+// Send message to adjacent player.
 //
-// POST /api/v1/users
-func (UnimplementedHandler) CreateUser(ctx context.Context, req *CreateUserReq) (r *CreateUser, _ error) {
+// POST /api/rooms/{room_id}/messages
+func (UnimplementedHandler) CreateMessage(ctx context.Context, req *CreateMessageRequest, params CreateMessageParams) (r *Message, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
-// GetUser implements getUser operation.
+// CreateSwapIntent implements createSwapIntent operation.
 //
-// Get user by ID.
+// Set swap intent ON by target player ID.
 //
-// GET /api/v1/users/{userID}
-func (UnimplementedHandler) GetUser(ctx context.Context, params GetUserParams) (r *User, _ error) {
+// POST /api/rooms/{room_id}/swaps/intents
+func (UnimplementedHandler) CreateSwapIntent(ctx context.Context, req *SwapIntentRequest, params CreateSwapIntentParams) (r *SwapIntentResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
-// GetUsers implements getUsers operation.
+// DeleteMyDirectionalIntent implements deleteMyDirectionalIntent operation.
 //
-// Get all users.
+// Set directional swap intent OFF (prev or next).
 //
-// GET /api/v1/users
-func (UnimplementedHandler) GetUsers(ctx context.Context) (r []User, _ error) {
+// DELETE /api/rooms/{room_id}/players/me/intent
+func (UnimplementedHandler) DeleteMyDirectionalIntent(ctx context.Context, req *DirectionalIntentRequest, params DeleteMyDirectionalIntentParams) (r *DirectionalIntentResponse, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// DeleteSwapIntent implements deleteSwapIntent operation.
+//
+// Cancel swap intent by target player ID.
+//
+// DELETE /api/rooms/{room_id}/swaps/intents/{target_player_id}
+func (UnimplementedHandler) DeleteSwapIntent(ctx context.Context, params DeleteSwapIntentParams) (r *DeleteSwapIntentResponse, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// GetMessages implements getMessages operation.
+//
+// Get message history related to myself.
+//
+// GET /api/rooms/{room_id}/messages
+func (UnimplementedHandler) GetMessages(ctx context.Context, params GetMessagesParams) (r []Message, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// GetRoom implements getRoom operation.
+//
+// Get room state.
+//
+// GET /api/rooms/{room_id}
+func (UnimplementedHandler) GetRoom(ctx context.Context, params GetRoomParams) (r *RoomStateResponse, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// JoinRoom implements joinRoom operation.
+//
+// Join matching queue.
+//
+// POST /api/rooms/join
+func (UnimplementedHandler) JoinRoom(ctx context.Context, req *JoinRoomRequest) (r *JoinRoomResponse, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// PatchMyDirectionalIntent implements patchMyDirectionalIntent operation.
+//
+// Set directional swap intent ON (prev or next).
+//
+// PATCH /api/rooms/{room_id}/players/me/intent
+func (UnimplementedHandler) PatchMyDirectionalIntent(ctx context.Context, req *DirectionalIntentRequest, params PatchMyDirectionalIntentParams) (r *DirectionalIntentResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
 // Ping implements ping operation.
 //
-// Ping API.
+// Ping.
 //
 // GET /api/v1/ping
 func (UnimplementedHandler) Ping(ctx context.Context) (r PingOK, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SubscribeRoomStream implements subscribeRoomStream operation.
+//
+// Subscribe room events (SSE).
+//
+// GET /api/rooms/{room_id}/stream
+func (UnimplementedHandler) SubscribeRoomStream(ctx context.Context, params SubscribeRoomStreamParams) (r SubscribeRoomStreamOK, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

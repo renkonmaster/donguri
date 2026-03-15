@@ -24,11 +24,15 @@ func run() (err error) {
 	c.Parse()
 
 	// connect to and migrate database
-	db, err := database.Setup(c.PostgreSQLDSN())
+	db, err := database.SetupGORM(c.PostgreSQLDSN())
 	if err != nil {
 		return err
 	}
-	defer g.Guard(db.Close)
+	sqlDB, err := db.DB()
+	if err != nil {
+		return err
+	}
+	defer g.Guard(sqlDB.Close)
 
 	server, err := injector.InjectServer(db)
 	if err != nil {
