@@ -185,5 +185,6 @@ func parseEWKTPoint(ewkt string) (latLng, error) {
 	if _, err := fmt.Sscanf(body, "%f %f", &lng, &lat); err != nil {
 		return latLng{}, fmt.Errorf("parse EWKT coordinates %q: %w", ewkt, err)
 	}
+
 	return latLng{Lat: lat, Lng: lng}, nil
 }

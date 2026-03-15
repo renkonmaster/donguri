@@ -10,6 +10,7 @@ type Hub struct {
 func NewHub() *Hub {
 	hub := new(Hub)
 	hub.rooms = map[string]map[string]chan []byte{}
+
 	return hub
 }
 

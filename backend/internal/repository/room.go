@@ -41,7 +41,7 @@ func (r *Repository) CreateRoom(ctx context.Context) (*database.RoomEntity, erro
 
 func (r *Repository) CountPlayersInRoom(ctx context.Context, roomID uuid.UUID) (int, error) {
 	var count int64
-	if err := r.db.WithContext(ctx).Model(&database.PlayerEntity{}).
+	if err := r.db.WithContext(ctx).Model(new(database.PlayerEntity)).
 		Where("room_id = ?", roomID).
 		Count(&count).Error; err != nil {
 		return 0, fmt.Errorf("count players in room: %w", err)
@@ -90,5 +90,6 @@ func (r *Repository) CreatePlayer(ctx context.Context, roomID uuid.UUID, name st
 	if err := r.db.WithContext(ctx).Create(&player).Error; err != nil {
 		return nil, fmt.Errorf("create player: %w", err)
 	}
+
 	return &player, nil
 }

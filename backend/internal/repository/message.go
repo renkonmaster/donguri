@@ -35,7 +35,7 @@ func (r *Repository) CreateMessage(ctx context.Context, params CreateMessagePara
 
 	var players []database.PlayerEntity
 	if err := r.db.WithContext(ctx).
-		Model(&database.PlayerEntity{}).
+		Model(new(database.PlayerEntity)).
 		Where("room_id = ? AND id IN ?", params.RoomID, []uuid.UUID{params.SenderID, params.ReceiverID}).
 		Select("id", "order_index").
 		Find(&players).Error; err != nil {
