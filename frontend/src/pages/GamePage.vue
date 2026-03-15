@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import GameScene from '@/components/GameScene.vue';
@@ -17,6 +17,19 @@ const players = ref<Player[]>([]);
 const messages = ref<Message[]>([]);
 const countdownSeconds = ref<number | null>(null);
 let countdownTimer: ReturnType<typeof setInterval> | null = null;
+
+const gameStartTime = ref<number | null>(null);
+const swapCount = ref(0);
+const clearTimeMs = ref<number | null>(null);
+
+watch(roomStatus, (newStatus) => {
+  if (newStatus === 'playing' && gameStartTime.value === null) {
+    gameStartTime.value = Date.now();
+  }
+  if (newStatus === 'finished' && clearTimeMs.value === null) {
+    clearTimeMs.value = gameStartTime.value !== null ? Date.now() - gameStartTime.value : null;
+  }
+}, { immediate: true });
 
 type ApiPlayer = {
   id: string;
@@ -42,6 +55,10 @@ async function fetchRoomState() {
   const res = await fetch(`/api/rooms/${roomId}`, {
     headers: { 'X-Player-ID': playerId },
   });
+  if (res.status === 404) {
+    router.replace('/');
+    return;
+  }
   if (!res.ok) return;
   const data = await res.json() as {
     status: 'matching' | 'playing' | 'finished';
@@ -141,9 +158,13 @@ async function onToggleSwap(targetPlayerId: string, needsSwap: boolean) {
   if (!res.ok) return;
   const data = await res.json() as { matched: boolean; room_status: string };
   if (data.matched) {
+    swapCount.value++;
     void fetchRoomState();
   }
   if (data.room_status === 'finished') {
+    if (clearTimeMs.value === null && gameStartTime.value !== null) {
+      clearTimeMs.value = Date.now() - gameStartTime.value;
+    }
     roomStatus.value = 'finished';
   }
 }
@@ -157,6 +178,9 @@ async function onToggleSwap(targetPlayerId: string, needsSwap: boolean) {
         :my-player-id="playerId"
         :players="players"
         :messages="messages"
+        :room-status="roomStatus"
+        :swap-count="swapCount"
+        :clear-time-ms="clearTimeMs"
         @send-message="onSendMessage"
         @toggle-swap="onToggleSwap"
       />

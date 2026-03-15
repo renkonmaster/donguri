@@ -50,11 +50,19 @@ func (r *Repository) CreateMessage(ctx context.Context, params CreateMessagePara
 		orderByPlayerID[player.ID] = player.OrderIndex
 	}
 
+	var playerCount int64
+	if err := r.db.WithContext(ctx).
+		Model(new(database.PlayerEntity)).
+		Where("room_id = ?", params.RoomID).
+		Count(&playerCount).Error; err != nil {
+		return nil, fmt.Errorf("count players in room: %w", err)
+	}
+
 	diff := orderByPlayerID[params.SenderID] - orderByPlayerID[params.ReceiverID]
 	if diff < 0 {
 		diff = -diff
 	}
-	if diff != 1 {
+	if diff != 1 && diff != int(playerCount)-1 {
 		return nil, ErrPlayersNotAdjacent
 	}
 
