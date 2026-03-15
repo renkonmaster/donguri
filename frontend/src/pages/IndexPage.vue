@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import communicationBg from '@/assets/communication.png';
 import phoneBg from '@/assets/phone.png';
+import logoImage from '@/assets/logo.png';
 
 const router = useRouter();
 const playerName = ref('');
@@ -29,29 +30,32 @@ const bgImage = computed(() =>
       class="page-bg relative min-h-screen"
       :style="{ backgroundImage: `url(${bgImage})` }"
     >
-      <div class="absolute inset-0 bg-black/33" />
-      <div class="relative flex min-h-screen flex-col items-center justify-center gap-6 px-6 pb-56 text-center">
-        <h1 class="text-5xl font-bold tracking-widest text-white drop-shadow-lg">
-          InterKnot
-        </h1>
-        <p class="text-white/70">
-          絡まった糸をほどく、位置情報ゲーム
-        </p>
+      <div class="relative flex min-h-screen flex-col items-center justify-center px-6 pb-56 text-center">
+        <div class="flex flex-col items-center gap-4">
+          <img
+            :src="logoImage"
+            alt="InterKnot logo"
+            class="w-56 sm:w-72 md:w-80 h-auto object-contain drop-shadow-lg"
+          >
+        </div>
 
-        <div class="mx-auto mt-2 flex w-full max-w-xs flex-col gap-4">
+        <div class="mx-auto mt-8 flex w-full max-w-xs flex-col gap-4">
           <label
             for="player-name"
             class="sr-only"
-          >名前</label>
+          >
+            名前
+          </label>
+
           <input
             id="player-name"
             v-model="playerName"
             type="text"
             placeholder="あなたの名前"
             maxlength="20"
-            class="rounded-xl border border-white/30 bg-white/20 px-4 py-3 text-center text-white placeholder-white/50 outline-none backdrop-blur-sm focus:border-white/60 focus:bg-white/25"
+            class="rounded-xl border border-white/70 bg-white/90 px-4 py-3 text-center text-slate-700 placeholder-slate-400 outline-none shadow-md backdrop-blur-sm focus:border-sky-300 focus:bg-white"
           >
-          <!-- TODO: バックエンド接続後は GPS 取得 → POST /api/rooms/join → 遷移に変更する -->
+
           <button
             :disabled="playerName.trim() === ''"
             class="rounded-xl bg-emerald-500 py-3 font-semibold text-white shadow transition-colors hover:bg-emerald-400 active:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-40"
