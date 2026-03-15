@@ -23,8 +23,37 @@ type SetSwapIntentResult struct {
 	RoomStatus string
 }
 
-type roomIntersectionCountRow struct {
-	Count int `gorm:"column:count"`
+// 部屋内のエッジ交差数を返す（クリア判定用）
+// 部屋内のエッジ交差数を返す（ST_Intersects かつ ST_Touches でないもののみカウント）
+func (r *Repository) GetRoomIntersectionCount(ctx context.Context, roomID uuid.UUID, tx *gorm.DB) (int, error) {
+	var row struct{ Count int }
+	db := r.db
+	if tx != nil {
+		db = tx
+	}
+	// order_index順にLineStringを作り、全ペアでST_IntersectsかつST_Touchesでないものをカウント
+	err := db.WithContext(ctx).Raw(`
+		WITH lines AS (
+			SELECT
+				order_index,
+				ST_MakeLine(
+					ST_GeomFromEWKT(location),
+					LEAD(ST_GeomFromEWKT(location)) OVER (ORDER BY order_index)
+				) AS geom
+			FROM players
+			WHERE room_id = ?
+		)
+		SELECT COUNT(*) AS count
+		FROM lines l1, lines l2
+		WHERE l1.order_index < l2.order_index
+		  AND l1.geom IS NOT NULL AND l2.geom IS NOT NULL
+		  AND ST_Intersects(l1.geom, l2.geom)
+		  AND NOT ST_Touches(l1.geom, l2.geom)
+	`, roomID).Scan(&row).Error
+	if err != nil {
+		return 0, fmt.Errorf("get room intersection count: %w", err)
+	}
+	return row.Count, nil
 }
 
 func (r *Repository) SetSwapIntent(ctx context.Context, params SetSwapIntentParams) (*SetSwapIntentResult, error) {
@@ -136,26 +165,19 @@ func (r *Repository) SetSwapIntent(ctx context.Context, params SetSwapIntentPara
 			return fmt.Errorf("delete affected connections: %w", err)
 		}
 
-		var intersectionCountRow roomIntersectionCountRow
-		if err := tx.Model(&database.RoomEntity{}).
-			Select("get_room_intersection_count(?) AS count", params.RoomID).
-			Limit(1).
-			Scan(&intersectionCountRow).Error; err != nil {
-			return fmt.Errorf("get room intersection count: %w", err)
+		intersectionCount, err := r.GetRoomIntersectionCount(ctx, params.RoomID, tx)
+		if err != nil {
+			return err
 		}
-
-		if intersectionCountRow.Count != 0 {
+		if intersectionCount != 0 {
 			return nil
 		}
-
 		if err := tx.Model(&database.RoomEntity{}).
 			Where("id = ?", params.RoomID).
 			Updates(map[string]any{"status": database.RoomStatusFinished, "updated_at": gorm.Expr("NOW()")}).Error; err != nil {
 			return fmt.Errorf("update room status to finished: %w", err)
 		}
-
 		result.RoomStatus = database.RoomStatusFinished
-
 		return nil
 	})
 	if err != nil {
