@@ -79,6 +79,22 @@ func (r *Repository) MarkRoomPlayingIfFull(
 	return tx.RowsAffected > 0, nil
 }
 
+func (r *Repository) ExpireRoomIfPlaying(ctx context.Context, roomID uuid.UUID) (bool, error) {
+	now := time.Now().UTC()
+	tx := r.db.WithContext(ctx).
+		Model(new(database.RoomEntity)).
+		Where("id = ? AND status = ? AND expires_at <= ?", roomID, database.RoomStatusPlaying, now).
+		Updates(map[string]any{
+			"status":     database.RoomStatusFinished,
+			"updated_at": now,
+		})
+	if tx.Error != nil {
+		return false, fmt.Errorf("expire room: %w", tx.Error)
+	}
+
+	return tx.RowsAffected > 0, nil
+}
+
 func (r *Repository) CreatePlayer(ctx context.Context, roomID uuid.UUID, name string, lat, lng float64, orderIndex int) (*database.PlayerEntity, error) {
 	var player database.PlayerEntity
 	player.ID = uuid.New()

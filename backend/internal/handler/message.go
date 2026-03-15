@@ -83,7 +83,8 @@ func messageValidationError(err error) *api.ErrorStatusCode {
 	if errors.Is(err, repository.ErrReceiverIDRequired) ||
 		errors.Is(err, repository.ErrSenderReceiverSame) ||
 		errors.Is(err, repository.ErrPlayerNotFoundInRoom) ||
-		errors.Is(err, repository.ErrPlayersNotAdjacent) {
+		errors.Is(err, repository.ErrPlayersNotAdjacent) ||
+		errors.Is(err, repository.ErrRoomNotPlaying) {
 		return &api.ErrorStatusCode{
 			StatusCode: http.StatusBadRequest,
 			Response: api.Error{

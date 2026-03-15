@@ -27,6 +27,10 @@ let countdownTimer: ReturnType<typeof setInterval> | null = null;
 const gameStartTime = ref<number | null>(null);
 const swapCount = ref(0);
 const clearTimeMs = ref<number | null>(null);
+const intersectionCount = ref(0);
+const timeLeftSeconds = ref<number | null>(null);
+let gameTimer: ReturnType<typeof setInterval> | null = null;
+let gameDeadline: number | null = null;
 
 watch(roomStatus, (newStatus) => {
   if (newStatus === 'playing' && gameStartTime.value === null) {
@@ -78,9 +82,26 @@ async function fetchRoomState(): Promise<boolean> {
   const data = await res.json() as {
     status: 'matching' | 'playing' | 'finished';
     players: ApiPlayer[];
+    time_left: number | null;
+    intersection_count: number;
   };
   roomStatus.value = data.status;
   players.value = data.players.map(mapPlayer);
+  intersectionCount.value = data.intersection_count;
+
+  if (data.status === 'playing' && data.time_left != null) {
+    gameDeadline = Date.now() + data.time_left * 1000;
+    timeLeftSeconds.value = data.time_left;
+    if (gameTimer === null) {
+      gameTimer = setInterval(() => {
+        if (gameDeadline === null) return;
+        timeLeftSeconds.value = Math.max(0, Math.ceil((gameDeadline - Date.now()) / 1000));
+      }, 1000);
+    }
+  }
+  if (data.status === 'finished') {
+    stopGameTimer();
+  }
 
   if (data.status === 'matching' && data.players.length === maxPlayersPerRoom && countdownTimer === null) {
     startCountdown();
@@ -152,12 +173,20 @@ onMounted(async () => {
   });
 });
 
+function stopGameTimer() {
+  if (gameTimer === null) return;
+  clearInterval(gameTimer);
+  gameTimer = null;
+  gameDeadline = null;
+}
+
 onUnmounted(() => {
   sse?.close();
   fetchController?.abort();
   if (countdownTimer !== null) {
     clearInterval(countdownTimer);
   }
+  stopGameTimer();
 });
 
 async function onSendMessage(receiverId: string, content: string) {
@@ -202,6 +231,8 @@ async function onToggleSwap(targetPlayerId: string, needsSwap: boolean) {
         :room-status="roomStatus"
         :swap-count="swapCount"
         :clear-time-ms="clearTimeMs"
+        :intersection-count="intersectionCount"
+        :time-left-seconds="timeLeftSeconds"
         @send-message="onSendMessage"
         @toggle-swap="onToggleSwap"
       />
