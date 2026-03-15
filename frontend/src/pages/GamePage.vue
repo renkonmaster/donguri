@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useRoute } from 'vue-router';
+import { useOgpHead } from '@/composables/useOgpHead';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import GameScene from '@/components/GameScene.vue';
 import MatchingScene from '@/components/MatchingScene.vue';
@@ -11,6 +12,11 @@ type Scene = 'matching' | 'game';
 // デバッグ用: URL ハッシュでシーンを切り替え (/game#matching → matching, /game → game)
 const route = useRoute();
 const scene = computed<Scene>(() => route.hash === '#matching' ? 'matching' : 'game');
+
+useOgpHead(
+  'InterKnot | ゲームページ',
+  'InterKnotのゲームページです。マッチング状況や参加者の位置情報を確認できます。',
+);
 
 const myPlayerId = 'p5';
 

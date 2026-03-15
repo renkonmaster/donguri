@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useOgpHead } from '@/composables/useOgpHead';
 import DefaultLayout from '@/layouts/DefaultLayout.vue';
 import communicationBg from '@/assets/communication.png';
 import phoneBg from '@/assets/phone.png';
@@ -9,18 +10,31 @@ import logoImage from '@/assets/logo.png';
 const router = useRouter();
 const playerName = ref('');
 
-const mobileQuery = window.matchMedia('(max-width: 640px)');
-const isMobile = ref(mobileQuery.matches);
+const isMobile = ref(false);
+
+let mobileQuery: MediaQueryList | null = null;
 
 function onQueryChange(e: MediaQueryListEvent) {
   isMobile.value = e.matches;
 }
 
-onMounted(() => mobileQuery.addEventListener('change', onQueryChange));
-onUnmounted(() => mobileQuery.removeEventListener('change', onQueryChange));
+onMounted(() => {
+  mobileQuery = window.matchMedia('(max-width: 640px)');
+  isMobile.value = mobileQuery.matches;
+  mobileQuery.addEventListener('change', onQueryChange);
+});
+
+onUnmounted(() => {
+  mobileQuery?.removeEventListener('change', onQueryChange);
+});
 
 const bgImage = computed(() =>
   isMobile.value ? phoneBg : communicationBg,
+);
+
+useOgpHead(
+  'InterKnot | トップページ',
+  'InterKnotのトップページです。名前を入力してマッチングを始められます。',
 );
 
 const showRuleModal = ref(false);
