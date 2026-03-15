@@ -1,4 +1,4 @@
-// 2 点間の大圏コース (測地線) を steps 個の線分で補間した座標列を返す
+// 2 点間の大圏コース (測地線) を steps 本の線分で補間した座標列を返す (同一点のとき 1 本)
 export function greatCircleSegment(
   from: { lat: number; lng: number },
   to: { lat: number; lng: number },
@@ -13,7 +13,8 @@ export function greatCircleSegment(
     Math.sin((lat2 - lat1) / 2) ** 2
     + Math.cos(lat1) * Math.cos(lat2) * Math.sin((lng2 - lng1) / 2) ** 2,
   ));
-  if (d === 0) return [[from.lng, from.lat]];
+  // d === 0 のとき (同一点) は始点・終点の 2 点を返し、呼び出し側が常に 1 本以上の線分を作れるようにする
+  if (d === 0) return [[from.lng, from.lat], [to.lng, to.lat]];
   return Array.from({ length: steps + 1 }, (_, i) => {
     const t = i / steps;
     const A = Math.sin((1 - t) * d) / Math.sin(d);

@@ -17,7 +17,6 @@ const emit = defineEmits<{
 }>();
 
 const mapContainer = ref<HTMLDivElement | null>(null);
-// maplibre-gl は SSR クラッシュを防ぐため onMounted 内で動的 import する
 let map: MaplibreMap | null = null;
 
 const POINTS_SOURCE_ID = 'points';
@@ -59,7 +58,7 @@ function toPointsGeoJSON(points: MapPoint[], highlightedId: string | undefined):
   };
 }
 
-// 各辺を greatCircleSegment で補間し、隣接 2 点を 1 Feature として両端色の補間色を付与する
+// 各辺を greatCircleSegment で補間し、補間した各セグメントを 1 Feature として両端色の補間色を付与する
 function toLineGeoJSON(points: MapPoint[], highlightedId: string | undefined): GeoJSON.FeatureCollection {
   if (points.length < 2) return { type: 'FeatureCollection', features: [] };
   const loop = [...points, points[0]];
@@ -100,6 +99,9 @@ watch(
   },
 );
 
+// 注意: deep: true を付けていないため、親は points を in-place で変更せず
+// 必ず新しい配列を渡すこと (immutable update)。
+// deep watch にするとポイント数に比例してコストが増えるため採用しない。
 watch(
   [() => props.points, () => props.highlightedId],
   ([points, highlightedId]) => {
@@ -112,8 +114,7 @@ watch(
 onMounted(async () => {
   if (!mapContainer.value) return;
 
-  // maplibre-gl は SSR ビルド時に window/document を参照してクラッシュするため
-  // onMounted (ブラウザ環境のみ実行) の中で動的 import する
+  // onMounted はブラウザ環境のみで実行されるため、SSR クラッシュを防ぐために動的 import する
   const maplibregl = (await import('maplibre-gl')).default;
 
   // TODO: 日付変更線をまたぐ場合の対応をする (ハッカソン中は放置)
