@@ -21,7 +21,7 @@ const inputText = ref('');
 
 // --pc-r/g/b を設定し、CSS 側で rgb(var(--pc-r) var(--pc-g) var(--pc-b) / alpha) として使用する
 const themeVars = computed(() => {
-  const [r, g, b] = idToRgb(props.player.id, 'highlight');
+  const [r, g, b] = idToRgb(String(props.player.orderIndex), 'highlight');
   return { '--pc-r': r, '--pc-g': g, '--pc-b': b };
 });
 

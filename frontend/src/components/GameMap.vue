@@ -54,7 +54,7 @@ function updateUnreadPositions() {
   for (const id of (props.unreadIds ?? [])) {
     const p = props.points.find(pt => pt.id === id);
     if (!p) continue;
-    const [r, g, b] = idToRgb(p.id, 'highlight');
+    const [r, g, b] = idToRgb(String(p.orderIndex), 'highlight');
     const primary = map.project([p.lng, p.lat]);
     for (const n of [-1, 0, 1]) {
       positions.push({ key: `${id}:${n}`, x: primary.x + n * worldSize, y: primary.y, r, g, b });
@@ -66,12 +66,17 @@ function updateUnreadPositions() {
 // highlightedId に隣接している (ループ上で隣の) 点の ID セットを返す
 function adjacentIdsOf(points: MapPoint[], highlightedId: string | undefined): Set<string> {
   if (!highlightedId) return new Set();
-  const idx = points.findIndex(p => p.id === highlightedId);
-  if (idx === -1) return new Set();
-  return new Set([
-    points[(idx - 1 + points.length) % points.length].id,
-    points[(idx + 1) % points.length].id,
-  ]);
+  const me = points.find(p => p.id === highlightedId);
+  if (!me) return new Set();
+  const n = points.length;
+  return new Set(
+    points
+      .filter((p) => {
+        const diff = Math.abs(p.orderIndex - me.orderIndex);
+        return diff === 1 || diff === n - 1;
+      })
+      .map(p => p.id),
+  );
 }
 
 function toPointsGeoJSON(
@@ -88,7 +93,7 @@ function toPointsGeoJSON(
         : adjacentIds.has(p.id)
           ? 'adjacent'
           : 'normal';
-      const [r, g, b] = idToRgb(p.id, role);
+      const [r, g, b] = idToRgb(String(p.orderIndex), role);
       return {
         type: 'Feature',
         geometry: { type: 'Point', coordinates: [p.lng, p.lat] },
@@ -108,8 +113,8 @@ function toLineGeoJSON(points: MapPoint[], highlightedId: string | undefined): G
     const role: Role = (highlightedId && (loop[i].id === highlightedId || loop[i + 1].id === highlightedId))
       ? 'adjacent'
       : 'normal';
-    const rgbFrom = idToRgb(loop[i].id, role);
-    const rgbTo = idToRgb(loop[i + 1].id, role);
+    const rgbFrom = idToRgb(String(loop[i].orderIndex), role);
+    const rgbTo = idToRgb(String(loop[i + 1].orderIndex), role);
     const coords = unwrapLongitudes(greatCircleSegment(loop[i], loop[i + 1]));
 
     for (let j = 0; j < coords.length - 1; j++) {

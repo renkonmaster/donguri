@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := help
 .PHONY: help lint \
 	frontend/install frontend/dev frontend/build frontend/typecheck frontend/lint frontend/lint/fix \
-	backend/dev backend/build backend/lint backend/lint/fix backend/test
+	backend/dev backend/db/reset backend/build backend/lint backend/lint/fix backend/test
 
 help: ## コマンド一覧を表示する
 	@grep -E '^[a-zA-Z][a-zA-Z/]*:.*## ' $(MAKEFILE_LIST) \
@@ -37,6 +37,10 @@ frontend/lint/fix: ## Linter を実行して自動修正する
 
 backend/dev: ## 開発サーバーを起動する (Docker Compose Watch)
 	docker compose -f backend/compose.yml watch
+
+backend/db/reset: ## DB を初期化して開発サーバーを再起動する
+	docker compose -f backend/compose.yml down
+	docker compose -f backend/compose.yml up --wait
 
 backend/build: ## バイナリをビルドする
 	go -C backend mod download
