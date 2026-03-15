@@ -1,34 +1,101 @@
 package handler
 
-import "testing"
+import (
+	"context"
+	"io"
+	"strings"
+	"testing"
+	"time"
 
-func TestParseRoomStreamPath(t *testing.T) {
+	"github.com/google/uuid"
+	"github.com/renkonmaster/donguri/internal/api"
+	"github.com/renkonmaster/donguri/internal/service/stream"
+)
+
+func TestNewRoomStreamReader_SubscribeAndCleanup(t *testing.T) {
 	t.Parallel()
 
-	tests := []struct {
-		name   string
-		path   string
-		wantID string
-		ok     bool
-	}{
-		{name: "valid", path: "/api/rooms/550e8400-e29b-41d4-a716-446655440000/stream", wantID: "550e8400-e29b-41d4-a716-446655440000", ok: true},
-		{name: "invalid prefix", path: "/api/room/abc/stream", ok: false},
-		{name: "invalid suffix", path: "/api/rooms/abc/messages", ok: false},
-		{name: "missing room id", path: "/api/rooms//stream", ok: false},
+	hub := stream.NewHub()
+	h := New(nil, hub)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	roomID := "room-1"
+	reader := h.newRoomStreamReader(ctx, roomID)
+	defer reader.Close()
+
+	if got := hub.SubscriberCount(roomID); got != 1 {
+		t.Fatalf("unexpected subscriber count after subscribe: got=%d want=1", got)
 	}
 
-	for _, tc := range tests {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
+	cancel()
 
-			gotID, gotOK := parseRoomStreamPath(tc.path)
-			if gotOK != tc.ok {
-				t.Fatalf("unexpected ok: got=%v want=%v", gotOK, tc.ok)
+	buf := make([]byte, 1)
+	_, _ = reader.Read(buf)
+
+	deadline := time.Now().Add(500 * time.Millisecond)
+	for {
+		if hub.SubscriberCount(roomID) == 0 {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("subscriber was not cleaned up after context cancellation")
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+}
+
+func TestSubscribeRoomStream_ReturnsReader(t *testing.T) {
+	t.Parallel()
+
+	h := New(nil, stream.NewHub())
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	resp, err := h.SubscribeRoomStream(ctx, api.SubscribeRoomStreamParams{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resp.Data == nil {
+		t.Fatal("expected response Data reader")
+	}
+
+	if closer, ok := resp.Data.(io.Closer); ok {
+		_ = closer.Close()
+	}
+}
+
+func TestPublishRoomEvent_DeliveredToSubscriber(t *testing.T) {
+	t.Parallel()
+
+	h := New(nil, stream.NewHub())
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	roomID := uuid.New()
+	reader := h.newRoomStreamReader(ctx, roomID.String())
+	defer reader.Close()
+
+	h.publishRoomEvent(roomID, "room_updated", []byte(`{"status":"playing"}`))
+
+	buf := make([]byte, 256)
+	deadline := time.Now().Add(500 * time.Millisecond)
+	for {
+		n, err := reader.Read(buf)
+		if err != nil {
+			t.Fatalf("failed to read stream: %v", err)
+		}
+
+		chunk := string(buf[:n])
+		if strings.Contains(chunk, "event: room_updated") {
+			if !strings.Contains(chunk, `data: {"status":"playing"}`) {
+				t.Fatalf("event data missing: %q", chunk)
 			}
-			if gotID != tc.wantID {
-				t.Fatalf("unexpected room id: got=%q want=%q", gotID, tc.wantID)
-			}
-		})
+			break
+		}
+
+		if time.Now().After(deadline) {
+			t.Fatalf("timeout waiting for room_updated event, last chunk=%q", chunk)
+		}
 	}
 }

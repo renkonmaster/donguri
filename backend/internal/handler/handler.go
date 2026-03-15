@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
 	"log/slog"
 	"net/http"
 
@@ -28,12 +29,77 @@ func New(
 
 // CreateMessage implements [api.Handler].
 func (h *Handler) CreateMessage(ctx context.Context, req *api.CreateMessageRequest, params api.CreateMessageParams) (*api.Message, error) {
-	panic("unimplemented")
+	if req == nil {
+		return nil, &api.ErrorStatusCode{
+			StatusCode: http.StatusBadRequest,
+			Response: api.Error{
+				Message: "request body is required",
+			},
+		}
+	}
+
+	entity, err := h.repo.CreateMessage(ctx, repository.CreateMessageParams{
+		RoomID:     params.RoomID,
+		SenderID:   params.XPlayerID,
+		ReceiverID: req.ReceiverID,
+		Content:    req.Content,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	message := &api.Message{
+		ID:         entity.ID,
+		RoomID:     entity.RoomID,
+		SenderID:   entity.SenderID,
+		ReceiverID: req.ReceiverID,
+		Content:    entity.Content,
+		CreatedAt:  entity.CreatedAt,
+	}
+
+	if payload, marshalErr := json.Marshal(message); marshalErr == nil {
+		h.publishRoomEvent(params.RoomID, "message_received", payload)
+	}
+
+	return message, nil
 }
 
 // CreateSwapIntent implements [api.Handler].
 func (h *Handler) CreateSwapIntent(ctx context.Context, req *api.SwapIntentRequest, params api.CreateSwapIntentParams) (*api.SwapIntentResponse, error) {
-	panic("unimplemented")
+	if req == nil {
+		return nil, &api.ErrorStatusCode{
+			StatusCode: http.StatusBadRequest,
+			Response: api.Error{
+				Message: "request body is required",
+			},
+		}
+	}
+
+	if err := h.repo.SetSwapIntent(ctx, repository.SetSwapIntentParams{
+		RoomID:     params.RoomID,
+		SenderID:   params.XPlayerID,
+		ReceiverID: req.TargetPlayerID,
+		NeedsSwap:  true,
+	}); err != nil {
+		return nil, err
+	}
+
+	response := &api.SwapIntentResponse{
+		Matched:    false,
+		RoomStatus: api.RoomStatusPlaying,
+	}
+
+	payload := map[string]any{
+		"sender_id":        params.XPlayerID,
+		"target_player_id": req.TargetPlayerID,
+		"matched":          response.Matched,
+		"room_status":      response.RoomStatus,
+	}
+	if b, marshalErr := json.Marshal(payload); marshalErr == nil {
+		h.publishRoomEvent(params.RoomID, "connection_updated", b)
+	}
+
+	return response, nil
 }
 
 // DeleteMyDirectionalIntent implements [api.Handler].
@@ -68,7 +134,9 @@ func (h *Handler) PatchMyDirectionalIntent(ctx context.Context, req *api.Directi
 
 // SubscribeRoomStream implements [api.Handler].
 func (h *Handler) SubscribeRoomStream(ctx context.Context, params api.SubscribeRoomStreamParams) (api.SubscribeRoomStreamOK, error) {
-	panic("unimplemented")
+	return api.SubscribeRoomStreamOK{
+		Data: h.newRoomStreamReader(ctx, params.RoomID.String()),
+	}, nil
 }
 
 func (h *Handler) NewError(ctx context.Context, err error) *api.ErrorStatusCode {
