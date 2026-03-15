@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -16,6 +17,7 @@ func (h *Handler) JoinRoom(ctx context.Context, req *api.JoinRoomRequest) (*api.
 	var (
 		roomID   uuid.UUID
 		playerID uuid.UUID
+		joinedCount int
 	)
 
 	err := h.repo.Transaction(ctx, func(repo *repository.Repository) error {
@@ -42,11 +44,21 @@ func (h *Handler) JoinRoom(ctx context.Context, req *api.JoinRoomRequest) (*api.
 
 		roomID = room.ID
 		playerID = player.ID
+		joinedCount = count + 1
 		return nil
 	})
 	if err != nil {
 		return nil, fmt.Errorf("join room: %w", err)
 	}
+
+	if payload, marshalErr := json.Marshal(map[string]any{
+        "room_id":       roomID,
+        "player_id":     playerID,
+        "joined_count":  joinedCount,
+        "event":         "joined",
+    }); marshalErr == nil {
+        h.publishRoomEvent(roomID, "room_updated", payload)
+    }
 
 	return &api.JoinRoomResponse{
 		RoomID:   roomID,
