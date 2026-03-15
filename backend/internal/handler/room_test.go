@@ -1,8 +1,16 @@
 package handler
 
+// GetRoom ハンドラーのテストは PostGIS 専用の GetRoomIntersectionCount を呼ぶため、
+// POSTGRES_TEST_DSN 環境変数を設定した実 PostgreSQL+PostGIS が必要。
+//
+// 実行例:
+//   POSTGRES_TEST_DSN="postgres://user:password@localhost:5432/database?sslmode=disable" \
+//   go test ./internal/handler/ -run TestGetRoom -v
+
 import (
 	"context"
 	"net/http"
+	"os"
 	"testing"
 
 	"github.com/google/uuid"
@@ -10,60 +18,31 @@ import (
 	"github.com/renkonmaster/donguri/internal/repository"
 	"github.com/renkonmaster/donguri/internal/service/stream"
 	"gotest.tools/v3/assert"
-	"gorm.io/driver/sqlite"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 func setupGetRoomHandler(t *testing.T) *Handler {
 	t.Helper()
 
-	dsn := "file:" + uuid.NewString() + "?mode=memory&cache=shared"
-	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{}) //nolint:exhaustruct
+	dsn := os.Getenv("POSTGRES_TEST_DSN")
+	if dsn == "" {
+		t.Skip("POSTGRES_TEST_DSN not set; skipping GetRoom handler test")
+	}
+
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{}) //nolint:exhaustruct
 	assert.NilError(t, err)
 
-	assert.NilError(t, db.Exec(`
-		CREATE TABLE rooms (
-			id TEXT PRIMARY KEY,
-			status TEXT NOT NULL,
-			start_at DATETIME,
-			expires_at DATETIME,
-			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-			updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-		)
-	`).Error)
-
-	assert.NilError(t, db.Exec(`
-		CREATE TABLE players (
-			id TEXT PRIMARY KEY,
-			room_id TEXT NOT NULL REFERENCES rooms(id),
-			name TEXT NOT NULL,
-			location TEXT NOT NULL,
-			order_index INTEGER NOT NULL CHECK (order_index >= 0),
-			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-			updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-			UNIQUE (room_id, order_index)
-		)
-	`).Error)
-
-	assert.NilError(t, db.Exec(`
-		CREATE TABLE connections (
-			room_id     TEXT NOT NULL REFERENCES rooms(id),
-			sender_id   TEXT NOT NULL REFERENCES players(id),
-			receiver_id TEXT NOT NULL REFERENCES players(id),
-			needs_swap  BOOLEAN NOT NULL DEFAULT FALSE,
-			created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-			updated_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-			PRIMARY KEY (room_id, sender_id, receiver_id),
-			CHECK (sender_id <> receiver_id)
-		)
-	`).Error)
+	t.Cleanup(func() {
+		db.Exec("DELETE FROM connections")
+		db.Exec("DELETE FROM players")
+		db.Exec("DELETE FROM rooms")
+	})
 
 	return New(repository.New(db), stream.NewHub())
 }
 
 func TestGetRoom_NotFound(t *testing.T) {
-	t.Parallel()
-
 	h := setupGetRoomHandler(t)
 
 	_, err := h.GetRoom(context.Background(), api.GetRoomParams{
@@ -77,8 +56,6 @@ func TestGetRoom_NotFound(t *testing.T) {
 }
 
 func TestGetRoom_ReturnsState(t *testing.T) {
-	t.Parallel()
-
 	h := setupGetRoomHandler(t)
 	ctx := context.Background()
 
@@ -102,8 +79,6 @@ func TestGetRoom_ReturnsState(t *testing.T) {
 }
 
 func TestGetRoom_PlayersOrderedByIndex(t *testing.T) {
-	t.Parallel()
-
 	h := setupGetRoomHandler(t)
 	ctx := context.Background()
 
@@ -124,8 +99,6 @@ func TestGetRoom_PlayersOrderedByIndex(t *testing.T) {
 }
 
 func TestGetRoom_IntentsReflected(t *testing.T) {
-	t.Parallel()
-
 	h := setupGetRoomHandler(t)
 	ctx := context.Background()
 
@@ -135,11 +108,14 @@ func TestGetRoom_IntentsReflected(t *testing.T) {
 	assert.NilError(t, err)
 	assert.Equal(t, r0.RoomID, r1.RoomID)
 
-	// p0 → p1 に intent を直接挿入
-	assert.NilError(t, h.repo.(*repository.Repository).ExecRaw(
-		`INSERT INTO connections (room_id, sender_id, receiver_id, needs_swap) VALUES (?, ?, ?, TRUE)`,
-		r0.RoomID, r0.PlayerID, r1.PlayerID,
-	))
+	// p0 → p1 に intent をセット
+	_, err = h.repo.SetSwapIntent(ctx, repository.SetSwapIntentParams{
+		RoomID:     r0.RoomID,
+		SenderID:   r0.PlayerID,
+		ReceiverID: r1.PlayerID,
+		NeedsSwap:  true,
+	})
+	assert.NilError(t, err)
 
 	// p0 視点: my_intents に p1 が入る
 	res0, err := h.GetRoom(ctx, api.GetRoomParams{RoomID: r0.RoomID, XPlayerID: r0.PlayerID})
