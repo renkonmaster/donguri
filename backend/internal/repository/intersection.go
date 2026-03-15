@@ -14,10 +14,16 @@ type Edge struct {
 	EndOrderIndex   int
 }
 
+type Point struct {
+	Lat float64
+	Lng float64
+}
+
 // IntersectingEdgePair は交差している2辺の組。
 type IntersectingEdgePair struct {
-	First  Edge
-	Second Edge
+	First    Edge
+	Second   Edge
+	Location Point
 }
 
 // GetIntersectingEdgePairs は room 内の交差している辺ペアを返す。
@@ -29,10 +35,12 @@ func (r *Repository) GetIntersectingEdgePairs(ctx context.Context, roomID uuid.U
 	}
 
 	type row struct {
-		FirstStart  int `gorm:"column:first_start"`
-		FirstEnd    int `gorm:"column:first_end"`
-		SecondStart int `gorm:"column:second_start"`
-		SecondEnd   int `gorm:"column:second_end"`
+		FirstStart int     `gorm:"column:first_start"`
+		FirstEnd   int     `gorm:"column:first_end"`
+		SecondStart int    `gorm:"column:second_start"`
+		SecondEnd   int    `gorm:"column:second_end"`
+		Lat         float64 `gorm:"column:intersection_lat"`
+		Lng         float64 `gorm:"column:intersection_lng"`
 	}
 	var rows []row
 
@@ -52,7 +60,9 @@ func (r *Repository) GetIntersectingEdgePairs(ctx context.Context, roomID uuid.U
 			l1.start_order AS first_start,
 			l1.end_order AS first_end,
 			l2.start_order AS second_start,
-			l2.end_order AS second_end
+			l2.end_order AS second_end,
+			ST_Y(ST_Intersection(l1.geom, l2.geom)) AS intersection_lat,
+			ST_X(ST_Intersection(l1.geom, l2.geom)) AS intersection_lng
 		FROM lines l1, lines l2
 		WHERE l1.start_order < l2.start_order
 		  AND l1.geom IS NOT NULL
@@ -74,6 +84,10 @@ func (r *Repository) GetIntersectingEdgePairs(ctx context.Context, roomID uuid.U
 			Second: Edge{
 				StartOrderIndex: r.SecondStart,
 				EndOrderIndex:   r.SecondEnd,
+			},
+			Location: Point{
+				Lat: r.Lat,
+				Lng: r.Lng,
 			},
 		})
 	}

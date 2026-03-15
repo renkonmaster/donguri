@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+
 	"github.com/renkonmaster/donguri/internal/api"
 	"github.com/renkonmaster/donguri/internal/repository"
 )
@@ -27,6 +28,10 @@ func toAPIIntersectingEdgePairs(pairs []repository.IntersectingEdgePair) []api.I
 			Second: api.OrderedEdge{
 				StartOrderIndex: pair.Second.StartOrderIndex,
 				EndOrderIndex:   pair.Second.EndOrderIndex,
+			},
+			IntersectionLocation: api.Location{
+				Lat: pair.Location.Lat,
+				Lng: pair.Location.Lng,
 			},
 		})
 	}
