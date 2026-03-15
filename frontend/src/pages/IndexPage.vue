@@ -98,9 +98,11 @@ async function startMatching() {
   loading.value = true;
   errorMessage.value = '';
   try {
-    // TODO: GPS 取得に切り替える
-    const lat = Math.random() * 130 - 60;
-    const lng = Math.random() * 360 - 180;
+    const { coords } = await new Promise<GeolocationPosition>((resolve, reject) =>
+      navigator.geolocation.getCurrentPosition(resolve, reject),
+    );
+    const lat = coords.latitude;
+    const lng = coords.longitude;
     const res = await fetch('/api/rooms/join', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
