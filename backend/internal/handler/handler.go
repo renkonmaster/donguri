@@ -7,15 +7,23 @@ import (
 
 	"github.com/renkonmaster/donguri/internal/api"
 	"github.com/renkonmaster/donguri/internal/repository"
+	"github.com/renkonmaster/donguri/internal/service/stream"
 )
 
 type Handler struct {
 	api.UnimplementedHandler
 	repo *repository.Repository
+	hub  *stream.Hub
 }
 
-func New(repo *repository.Repository) *Handler {
-	return &Handler{repo: repo}
+func New(
+	repo *repository.Repository,
+	hub *stream.Hub,
+) *Handler {
+	return &Handler{
+		repo: repo,
+		hub:  hub,
+	}
 }
 
 // CreateMessage implements [api.Handler].
