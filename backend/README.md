@@ -17,12 +17,12 @@
 
 ## 開発の流れ
 
-- `backend/` ディレクトリ内で `docker compose watch` を実行することで、開発サーバーを起動できます。
+- プロジェクトルートで `make backend/dev` を実行することで、開発サーバーを起動できます。
   - ソースコードの変更を検知して自動でリビルド・再起動されます。
   - 起動後、以下の URL にアクセスできます。
     - <http://localhost:8080/> (API)
     - <http://localhost:8081/> (DB 管理画面)
-- その他のコマンド (ビルド、テスト、Lint など) については、テンプレートの [README](https://github.com/ras0q/go-backend-template) の Tasks セクションを参照してください。
+- その他のコマンドについては、`make help` を参照してください。
 
 ## 開発時の注意点
 

@@ -15,6 +15,25 @@
 
 ---
 
+## コマンド一覧
+
+プロジェクトルートで `make help` を実行するとコマンド一覧が確認できます。
+
+```sh
+make help
+```
+
+よく使うコマンドは以下の通りです。
+
+| コマンド | 説明 |
+|---|---|
+| `make frontend/dev` | フロントエンド開発サーバーを起動する |
+| `make backend/dev` | バックエンド開発サーバーを起動する (Docker Compose Watch) |
+| `make lint` | 全 Linter を実行する |
+| `make backend/test` | バックエンドのユニットテストを実行する |
+
+---
+
 ## Docker でのビルド手順
 
 > [!Warning]
