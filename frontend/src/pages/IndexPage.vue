@@ -54,6 +54,16 @@ useHead({
     { rel: 'canonical', href: `${baseUrl}${route.path}` },
   ],
 });
+
+const showRuleModal = ref(false);
+
+function openRuleModal() {
+  showRuleModal.value = true;
+}
+
+function closeRuleModal() {
+  showRuleModal.value = false;
+}
 </script>
 
 <template>
@@ -88,13 +98,49 @@ useHead({
             class="rounded-xl border border-white/70 bg-white/90 px-4 py-3 text-center text-slate-700 placeholder-slate-400 outline-none shadow-md backdrop-blur-sm focus:border-sky-300 focus:bg-white"
           >
 
-          <button
-            :disabled="playerName.trim() === ''"
-            class="rounded-xl bg-emerald-500 py-3 font-semibold text-white shadow transition-colors hover:bg-emerald-400 active:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-40"
-            @click="router.push('/game')"
+          <div class="flex w-full items-center gap-2">
+            <button
+              :disabled="playerName.trim() === ''"
+              class="flex-1 rounded-xl bg-emerald-500 py-3 font-semibold text-white shadow transition-colors hover:bg-emerald-400 active:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-40"
+              @click="router.push('/game')"
+            >
+              マッチングをする
+            </button>
+            <button
+              class="rounded-xl bg-white/90 py-3 px-4 flex items-center justify-center text-lg font-bold shadow hover:bg-slate-100 active:bg-slate-200"
+              aria-label="ルール説明"
+              @click="openRuleModal"
+            >
+              ？
+            </button>
+          </div>
+
+          <div
+            v-if="showRuleModal"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+            @click="closeRuleModal"
           >
-            マッチングを始める
-          </button>
+            <div
+              class="bg-white rounded-xl shadow-lg p-6 max-w-md w-full relative"
+              @click.stop
+            >
+              <h2 class="text-xl font-bold mb-4">
+                ルール説明
+              </h2>
+              <ul class="text-left list-disc pl-5 mb-4">
+                <li>プレイヤー同士でマッチングしてゲームを開始します。</li>
+                <li>ゲームの進行や操作方法は画面の指示に従ってください。</li>
+                <li>不明点があればサポートまでお問い合わせください。</li>
+              </ul>
+              <button
+                class="absolute top-2 right-2 text-slate-500 hover:text-slate-700"
+                aria-label="閉じる"
+                @click="closeRuleModal"
+              >
+                ×
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
