@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, watch } from 'vue';
-import maplibregl, { type GeoJSONSource } from 'maplibre-gl';
+import type { GeoJSONSource, Map as MaplibreMap } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import type { MapClickPayload, MapPoint } from '@/types/map';
 import { idToRgb, lerpRgb, type Role } from '@/utils/pointColor';
@@ -17,12 +17,13 @@ const emit = defineEmits<{
 }>();
 
 const mapContainer = ref<HTMLDivElement | null>(null);
-let map: maplibregl.Map | null = null;
+// maplibre-gl は SSR クラッシュを防ぐため onMounted 内で動的 import する
+let map: MaplibreMap | null = null;
 
 const POINTS_SOURCE_ID = 'points';
 const LINE_SOURCE_ID = 'line';
 const LAYER_LINE_OUTLINE = 'line-outline';
-const LAYER_LINE = 'line';
+const LAYER_LINE = 'line-color';
 const LAYER_POINTS_CIRCLE = 'points-circle';
 const LAYER_POINTS_LABEL = 'points-label';
 const LAYER_POINTS_HITAREA = 'points-hitarea';
@@ -73,7 +74,10 @@ function toLineGeoJSON(points: MapPoint[], highlightedId: string | undefined): G
     const coords = unwrapLongitudes(greatCircleSegment(loop[i], loop[i + 1]));
 
     for (let j = 0; j < coords.length - 1; j++) {
-      const [r, g, b] = lerpRgb(rgbFrom, rgbTo, j / (coords.length - 1));
+      // coords.length > 2 のとき j / (coords.length - 2) で最終セグメントが t=1 (終点色) になる
+      // coords.length === 2 は 1 本のみで分母がゼロになるため t=0 (始点色) とする
+      const t = coords.length > 2 ? j / (coords.length - 2) : 0;
+      const [r, g, b] = lerpRgb(rgbFrom, rgbTo, t);
       features.push({
         type: 'Feature',
         geometry: { type: 'LineString', coordinates: [coords[j], coords[j + 1]] },
@@ -88,9 +92,11 @@ function toLineGeoJSON(points: MapPoint[], highlightedId: string | undefined): G
 watch(
   () => props.showLine,
   (showLine) => {
+    // load イベント発火前はレイヤーが存在しないため、存在確認してから操作する
+    if (!map?.getLayer(LAYER_LINE_OUTLINE)) return;
     const visibility = (showLine ?? true) ? 'visible' : 'none';
-    map?.setLayoutProperty(LAYER_LINE_OUTLINE, 'visibility', visibility);
-    map?.setLayoutProperty(LAYER_LINE, 'visibility', visibility);
+    map.setLayoutProperty(LAYER_LINE_OUTLINE, 'visibility', visibility);
+    map.setLayoutProperty(LAYER_LINE, 'visibility', visibility);
   },
 );
 
@@ -103,8 +109,12 @@ watch(
   },
 );
 
-onMounted(() => {
+onMounted(async () => {
   if (!mapContainer.value) return;
+
+  // maplibre-gl は SSR ビルド時に window/document を参照してクラッシュするため
+  // onMounted (ブラウザ環境のみ実行) の中で動的 import する
+  const maplibregl = (await import('maplibre-gl')).default;
 
   // TODO: 日付変更線をまたぐ場合の対応をする (ハッカソン中は放置)
   let minLng = Infinity, maxLng = -Infinity, minLat = Infinity, maxLat = -Infinity;

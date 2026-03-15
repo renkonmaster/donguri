@@ -4,6 +4,7 @@ export function greatCircleSegment(
   to: { lat: number; lng: number },
   steps = 64,
 ): [number, number][] {
+  steps = Math.max(1, steps);
   const toRad = (d: number) => (d * Math.PI) / 180;
   const toDeg = (r: number) => (r * 180) / Math.PI;
   const lat1 = toRad(from.lat), lng1 = toRad(from.lng);
