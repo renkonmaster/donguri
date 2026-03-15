@@ -3,10 +3,9 @@
 ## 使用技術
 
 - Language: Go
-- API スキーマ: ogen (OpenAPI)
+- API Schema: ogen (OpenAPI)
 - DB: PostgreSQL (PostGIS)
-- DB アクセス: GORM
-- Migration: goose
+- ORM: GORM
 - Linter: golangci-lint v2
 
 ## 環境構築
