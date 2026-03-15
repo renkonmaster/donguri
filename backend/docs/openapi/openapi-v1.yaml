@@ -114,6 +114,37 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
+  /api/rooms/{room_id}/intersections:
+    get:
+      summary: Get intersecting edge pairs in room
+      operationId: getRoomIntersections
+      parameters:
+        - name: room_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: X-Player-ID
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Intersecting edge pairs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoomIntersectionsResponse"
+        "default":
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
   /api/rooms/{room_id}/connections/{target_id}:
     put:
       summary: Upsert connection intent by target player ID
@@ -405,6 +436,40 @@ components:
         - matching
         - playing
         - finished
+
+    OrderedEdge:
+      type: object
+      properties:
+        start_order_index:
+          type: integer
+          minimum: 0
+        end_order_index:
+          type: integer
+          minimum: 0
+      required:
+        - start_order_index
+        - end_order_index
+
+    IntersectingEdgePair:
+      type: object
+      properties:
+        first:
+          $ref: "#/components/schemas/OrderedEdge"
+        second:
+          $ref: "#/components/schemas/OrderedEdge"
+      required:
+        - first
+        - second
+
+    RoomIntersectionsResponse:
+      type: object
+      properties:
+        intersections:
+          type: array
+          items:
+            $ref: "#/components/schemas/IntersectingEdgePair"
+      required:
+        - intersections
 
     Player:
       type: object

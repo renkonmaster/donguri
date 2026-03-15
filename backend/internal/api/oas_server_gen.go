@@ -38,6 +38,12 @@ type Handler interface {
 	//
 	// GET /api/rooms/{room_id}
 	GetRoom(ctx context.Context, params GetRoomParams) (*RoomStateResponse, error)
+	// GetRoomIntersections implements getRoomIntersections operation.
+	//
+	// Get intersecting edge pairs in room.
+	//
+	// GET /api/rooms/{room_id}/intersections
+	GetRoomIntersections(ctx context.Context, params GetRoomIntersectionsParams) (*RoomIntersectionsResponse, error)
 	// JoinRoom implements joinRoom operation.
 	//
 	// Join matching queue.

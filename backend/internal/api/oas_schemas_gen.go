@@ -262,6 +262,32 @@ func (s *ErrorStatusCode) SetResponse(val Error) {
 	s.Response = val
 }
 
+// Ref: #/components/schemas/IntersectingEdgePair
+type IntersectingEdgePair struct {
+	First  OrderedEdge `json:"first"`
+	Second OrderedEdge `json:"second"`
+}
+
+// GetFirst returns the value of First.
+func (s *IntersectingEdgePair) GetFirst() OrderedEdge {
+	return s.First
+}
+
+// GetSecond returns the value of Second.
+func (s *IntersectingEdgePair) GetSecond() OrderedEdge {
+	return s.Second
+}
+
+// SetFirst sets the value of First.
+func (s *IntersectingEdgePair) SetFirst(val OrderedEdge) {
+	s.First = val
+}
+
+// SetSecond sets the value of Second.
+func (s *IntersectingEdgePair) SetSecond(val OrderedEdge) {
+	s.Second = val
+}
+
 // Ref: #/components/schemas/JoinRoomRequest
 type JoinRoomRequest struct {
 	Name string  `json:"name"`
@@ -530,6 +556,32 @@ func (o OptUUID) Or(d uuid.UUID) uuid.UUID {
 	return d
 }
 
+// Ref: #/components/schemas/OrderedEdge
+type OrderedEdge struct {
+	StartOrderIndex int `json:"start_order_index"`
+	EndOrderIndex   int `json:"end_order_index"`
+}
+
+// GetStartOrderIndex returns the value of StartOrderIndex.
+func (s *OrderedEdge) GetStartOrderIndex() int {
+	return s.StartOrderIndex
+}
+
+// GetEndOrderIndex returns the value of EndOrderIndex.
+func (s *OrderedEdge) GetEndOrderIndex() int {
+	return s.EndOrderIndex
+}
+
+// SetStartOrderIndex sets the value of StartOrderIndex.
+func (s *OrderedEdge) SetStartOrderIndex(val int) {
+	s.StartOrderIndex = val
+}
+
+// SetEndOrderIndex sets the value of EndOrderIndex.
+func (s *OrderedEdge) SetEndOrderIndex(val int) {
+	s.EndOrderIndex = val
+}
+
 type PingOK struct {
 	Data io.Reader
 }
@@ -590,6 +642,21 @@ func (s *Player) SetOrderIndex(val int) {
 // SetLocation sets the value of Location.
 func (s *Player) SetLocation(val Location) {
 	s.Location = val
+}
+
+// Ref: #/components/schemas/RoomIntersectionsResponse
+type RoomIntersectionsResponse struct {
+	Intersections []IntersectingEdgePair `json:"intersections"`
+}
+
+// GetIntersections returns the value of Intersections.
+func (s *RoomIntersectionsResponse) GetIntersections() []IntersectingEdgePair {
+	return s.Intersections
+}
+
+// SetIntersections sets the value of Intersections.
+func (s *RoomIntersectionsResponse) SetIntersections(val []IntersectingEdgePair) {
+	s.Intersections = val
 }
 
 // Ref: #/components/schemas/RoomStateResponse
