@@ -98,9 +98,19 @@ async function startMatching() {
   loading.value = true;
   errorMessage.value = '';
   try {
+    if (!navigator.geolocation) {
+      throw new Error('お使いのブラウザは位置情報に対応していません');
+    }
     const { coords } = await new Promise<GeolocationPosition>((resolve, reject) =>
       navigator.geolocation.getCurrentPosition(resolve, reject),
-    );
+    ).catch((e: GeolocationPositionError) => {
+      const messages: Record<number, string> = {
+        [GeolocationPositionError.PERMISSION_DENIED]: '位置情報の使用が拒否されました。ブラウザの設定を確認してください',
+        [GeolocationPositionError.POSITION_UNAVAILABLE]: '現在地を取得できませんでした',
+        [GeolocationPositionError.TIMEOUT]: '位置情報の取得がタイムアウトしました',
+      };
+      throw new Error(messages[e.code] ?? '位置情報の取得に失敗しました');
+    });
     const lat = coords.latitude;
     const lng = coords.longitude;
     const res = await fetch('/api/rooms/join', {
