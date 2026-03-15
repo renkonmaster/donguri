@@ -1,0 +1,6 @@
+*
+!backend/infrastructure/
+!backend/internal/
+!backend/go.mod
+!backend/go.sum
+!backend/main.go
