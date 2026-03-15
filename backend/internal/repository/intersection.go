@@ -55,20 +55,30 @@ func (r *Repository) GetIntersectingEdgePairs(ctx context.Context, roomID uuid.U
 				) AS geom
 			FROM players
 			WHERE room_id = ?
+		),
+		intersections AS (
+			SELECT
+				l1.start_order AS first_start,
+				l1.end_order AS first_end,
+				l2.start_order AS second_start,
+				l2.end_order AS second_end,
+				ST_Intersection(l1.geom, l2.geom) AS geom
+			FROM lines l1, lines l2
+			WHERE l1.start_order < l2.start_order
+			  AND l1.geom IS NOT NULL
+			  AND l2.geom IS NOT NULL
+			  AND ST_Intersects(l1.geom, l2.geom)
+			  AND NOT ST_Touches(l1.geom, l2.geom)
 		)
 		SELECT
-			l1.start_order AS first_start,
-			l1.end_order AS first_end,
-			l2.start_order AS second_start,
-			l2.end_order AS second_end,
-			ST_Y(ST_Intersection(l1.geom, l2.geom)) AS intersection_lat,
-			ST_X(ST_Intersection(l1.geom, l2.geom)) AS intersection_lng
-		FROM lines l1, lines l2
-		WHERE l1.start_order < l2.start_order
-		  AND l1.geom IS NOT NULL
-		  AND l2.geom IS NOT NULL
-		  AND ST_Intersects(l1.geom, l2.geom)
-		  AND NOT ST_Touches(l1.geom, l2.geom)
+			first_start,
+			first_end,
+			second_start,
+			second_end,
+			ST_Y(geom) AS intersection_lat,
+			ST_X(geom) AS intersection_lng
+		FROM intersections
+		WHERE ST_GeometryType(geom) = 'ST_Point'
 	`, roomID).Scan(&rows).Error
 	if err != nil {
 		return nil, fmt.Errorf("get intersecting edge pairs: %w", err)

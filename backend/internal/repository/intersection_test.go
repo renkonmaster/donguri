@@ -108,6 +108,33 @@ func TestGetIntersectingEdgePairs_Crossing(t *testing.T) {
 	assert.Assert(t, math.Abs(pairs[0].Location.Lng-0.5) < 1e-9)
 }
 
+func TestGetIntersectingEdgePairs_OverlappingEdges(t *testing.T) {
+	repo := setupPostGISRepoForTest(t)
+	ctx := context.Background()
+
+	// 辺0→1 と 辺2→3 が同一直線上で重複する配置:
+	//   辺0→1: (0,0) → (2,0)
+	//   辺1→2: (2,0) → (1,0)  (折り返し)
+	//   辺2→3: (1,0) → (3,0)
+	// → 辺0→1 と 辺2→3 は (1,0)〜(2,0) 区間が重なり、
+	//   ST_Intersection の結果が LineString になるためエラーにならず 0 件を返す
+	room, err := repo.CreateRoom(ctx)
+	assert.NilError(t, err)
+
+	_, err = repo.CreatePlayer(ctx, room.ID, "p0", 0.0, 0.0, 0)
+	assert.NilError(t, err)
+	_, err = repo.CreatePlayer(ctx, room.ID, "p1", 0.0, 2.0, 1)
+	assert.NilError(t, err)
+	_, err = repo.CreatePlayer(ctx, room.ID, "p2", 0.0, 1.0, 2)
+	assert.NilError(t, err)
+	_, err = repo.CreatePlayer(ctx, room.ID, "p3", 0.0, 3.0, 3)
+	assert.NilError(t, err)
+
+	pairs, err := repo.GetIntersectingEdgePairs(ctx, room.ID, nil)
+	assert.NilError(t, err)
+	assert.Equal(t, len(pairs), 0)
+}
+
 func TestGetRoomIntersectionCount_Crossing(t *testing.T) {
 	repo := setupPostGISRepoForTest(t)
 	ctx := context.Background()

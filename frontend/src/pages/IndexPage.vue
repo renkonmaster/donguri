@@ -111,8 +111,11 @@ async function startMatching() {
       };
       throw new Error(messages[e.code] ?? '位置情報の取得に失敗しました');
     });
-    const lat = coords.latitude;
-    const lng = coords.longitude;
+    // IP 等で同一座標に集まるケースを防ぐため、GPS 誤差範囲 (±50m) 程度のゆらぎを加える
+    const jitterDeg = 50 / 111_000;
+    const lat = coords.latitude + (Math.random() * 2 - 1) * jitterDeg;
+    const cosLat = Math.max(Math.cos((coords.latitude * Math.PI) / 180), 1e-6);
+    const lng = coords.longitude + (Math.random() * 2 - 1) * jitterDeg / cosLat;
     const res = await fetch('/api/rooms/join', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
