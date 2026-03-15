@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/renkonmaster/donguri/infrastructure/database"
@@ -45,6 +46,34 @@ func (r *Repository) CountPlayersInRoom(ctx context.Context, roomID uuid.UUID) (
 		return 0, fmt.Errorf("count players in room: %w", err)
 	}
 	return int(count), nil
+}
+
+func (r *Repository) MarkRoomPlayingIfFull(
+    ctx context.Context,
+    roomID uuid.UUID,
+    joinedCount int,
+    maxPlayers int,
+    duration time.Duration,
+) (changed bool, err error) {
+    if joinedCount < maxPlayers {
+        return false, nil
+    }
+
+    now := time.Now().UTC()
+    expiresAt := now.Add(duration)
+
+    tx := r.db.WithContext(ctx).
+        Model(&database.RoomEntity{}).
+        Where("id = ? AND status = ?", roomID, database.RoomStatusMatching).
+        Updates(map[string]any{
+            "status":     database.RoomStatusPlaying,
+            "start_at":   now,
+            "expires_at": expiresAt,
+        })
+    if tx.Error != nil {
+        return false, fmt.Errorf("mark room playing: %w", tx.Error)
+    }
+    return tx.RowsAffected > 0, nil
 }
 
 func (r *Repository) CreatePlayer(ctx context.Context, roomID uuid.UUID, name string, lat, lng float64, orderIndex int) (*database.PlayerEntity, error) {
