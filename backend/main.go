@@ -24,7 +24,7 @@ func run() (err error) {
 	c.Parse()
 
 	// connect to and migrate database
-	db, err := database.Setup(c.MySQLConfig())
+	db, err := database.Setup(c.PostgreSQLDSN())
 	if err != nil {
 		return err
 	}

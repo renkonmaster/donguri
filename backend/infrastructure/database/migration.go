@@ -14,7 +14,7 @@ var embedMigrations embed.FS
 func migrateTables(db *sql.DB) error {
 	goose.SetBaseFS(embedMigrations)
 
-	if err := goose.SetDialect("mysql"); err != nil {
+	if err := goose.SetDialect("postgres"); err != nil {
 		return fmt.Errorf("set dialect: %w", err)
 	}
 

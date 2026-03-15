@@ -1,12 +1,12 @@
 package database
 
 import (
-	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 )
 
-func Setup(mysqlConfig *mysql.Config) (*sqlx.DB, error) {
-	db, err := sqlx.Connect("mysql", mysqlConfig.FormatDSN())
+func Setup(dsn string) (*sqlx.DB, error) {
+	db, err := sqlx.Connect("postgres", dsn)
 	if err != nil {
 		return nil, err
 	}

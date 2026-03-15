@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"testing"
 
 	"github.com/jmoiron/sqlx"
@@ -23,11 +24,12 @@ func TestMain(m *testing.M) {
 
 func run(m *testing.M) error {
 	c := config.Config{
-		DBUser: "root",
-		DBPass: "pass",
+		DBUser: "user",
+		DBPass: "password",
 		DBHost: "localhost",
-		DBPort: 3306,
-		DBName: "app",
+		DBPort: 5432,
+		DBName: "database",
+		DBSSL:  "disable",
 	}
 
 	pool, err := dockertest.NewPool("")
@@ -39,23 +41,25 @@ func run(m *testing.M) error {
 		return fmt.Errorf("ping docker: %w", err)
 	}
 
-	mysqlConfig := c.MySQLConfig()
-
-	resource, err := pool.Run("mysql", "latest", []string{
-		"MYSQL_ROOT_PASSWORD=" + mysqlConfig.Passwd,
-		"MYSQL_DATABASE=" + mysqlConfig.DBName,
+	resource, err := pool.Run("postgres", "15", []string{
+		"POSTGRES_USER=" + c.DBUser,
+		"POSTGRES_PASSWORD=" + c.DBPass,
+		"POSTGRES_DB=" + c.DBName,
 	})
 	if err != nil {
-		return fmt.Errorf("start mysql docker: %w", err)
+		return fmt.Errorf("start postgres docker: %w", err)
 	}
 
-	mysqlConfig.Addr = "localhost:" + resource.GetPort("3306/tcp")
+	c.DBPort, err = strconv.Atoi(resource.GetPort("5432/tcp"))
+	if err != nil {
+		return fmt.Errorf("parse postgres port: %w", err)
+	}
 
 	log.Println("wait for database container")
 
 	var db *sqlx.DB
 	if err := pool.Retry(func() error {
-		_db, err := database.Setup(mysqlConfig)
+		_db, err := database.Setup(c.PostgreSQLDSN())
 		if err != nil {
 			return err
 		}
@@ -77,7 +81,7 @@ func run(m *testing.M) error {
 	m.Run()
 
 	if err := pool.Purge(resource); err != nil {
-		return fmt.Errorf("purge mysql docker: %w", err)
+		return fmt.Errorf("purge postgres docker: %w", err)
 	}
 
 	return nil
