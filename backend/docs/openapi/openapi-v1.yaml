@@ -457,9 +457,12 @@ components:
           $ref: "#/components/schemas/OrderedEdge"
         second:
           $ref: "#/components/schemas/OrderedEdge"
+        intersection_location:
+          $ref: "#/components/schemas/Location"
       required:
         - first
         - second
+        - intersection_location
 
     RoomIntersectionsResponse:
       type: object

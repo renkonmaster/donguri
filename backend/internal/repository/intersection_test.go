@@ -10,6 +10,7 @@ package repository
 
 import (
 	"context"
+	"math"
 	"os"
 	"testing"
 
@@ -102,6 +103,8 @@ func TestGetIntersectingEdgePairs_Crossing(t *testing.T) {
 	assert.Equal(t, len(pairs), 1)
 	assert.Equal(t, pairs[0].First, Edge{StartOrderIndex: 0, EndOrderIndex: 1})
 	assert.Equal(t, pairs[0].Second, Edge{StartOrderIndex: 2, EndOrderIndex: 3})
+	assert.Assert(t, math.Abs(pairs[0].Location.Lat-0.5) < 1e-9)
+	assert.Assert(t, math.Abs(pairs[0].Location.Lng-0.5) < 1e-9)
 }
 
 func TestGetRoomIntersectionCount_Crossing(t *testing.T) {
