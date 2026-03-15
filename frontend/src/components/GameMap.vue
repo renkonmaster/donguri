@@ -2,7 +2,9 @@
 import { onMounted, onUnmounted, ref, watch } from 'vue';
 import maplibregl, { type GeoJSONSource } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import type { MapPoint } from '@/types/map';
+import type { MapClickPayload, MapPoint } from '@/types/map';
+import { idToRgb, lerpRgb, type Role } from '@/utils/pointColor';
+import { greatCircleSegment, unwrapLongitudes } from '@/utils/geo';
 
 const props = defineProps<{
   points: MapPoint[];
@@ -10,40 +12,20 @@ const props = defineProps<{
   showLine?: boolean;
 }>();
 
+const emit = defineEmits<{
+  click: [payload: MapClickPayload];
+}>();
+
 const mapContainer = ref<HTMLDivElement | null>(null);
 let map: maplibregl.Map | null = null;
 
 const POINTS_SOURCE_ID = 'points';
 const LINE_SOURCE_ID = 'line';
-type Rgb = [number, number, number];
-type Role = 'highlight' | 'adjacent' | 'normal';
-
-// ID を HSL の RGB に変換する
-// 黄金角 (137.508°) を掛けることで、連番 ID でも hue が均等に散らばる
-// role に応じて彩度・明度を調整する: highlight は鮮やか、adjacent は通常、normal は淡め
-function idToRgb(id: string, role: Role): Rgb {
-  const n = [...id].reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 0);
-  const h = Math.abs(n) * 137.508 % 360;
-  const [s, l] = role === 'highlight'
-    ? [0.90, 0.48]
-    : role === 'adjacent'
-      ? [0.75, 0.55]
-      : [0.45, 0.65];
-  const a = s * Math.min(l, 1 - l);
-  const channel = (pos: number) => {
-    const k = (pos + h / 30) % 12;
-    return Math.round((l - a * Math.max(-1, Math.min(k - 3, Math.min(9 - k, 1)))) * 255);
-  };
-  return [channel(0), channel(8), channel(4)];
-}
-
-function lerpRgb(a: Rgb, b: Rgb, t: number): Rgb {
-  return [
-    Math.round(a[0] + (b[0] - a[0]) * t),
-    Math.round(a[1] + (b[1] - a[1]) * t),
-    Math.round(a[2] + (b[2] - a[2]) * t),
-  ];
-}
+const LAYER_LINE_OUTLINE = 'line-outline';
+const LAYER_LINE = 'line';
+const LAYER_POINTS_CIRCLE = 'points-circle';
+const LAYER_POINTS_LABEL = 'points-label';
+const LAYER_POINTS_HITAREA = 'points-hitarea';
 
 // highlightedId に隣接している (ループ上で隣の) 点の ID セットを返す
 function adjacentIdsOf(points: MapPoint[], highlightedId: string | undefined): Set<string> {
@@ -57,13 +39,13 @@ function adjacentIdsOf(points: MapPoint[], highlightedId: string | undefined): S
 }
 
 function toPointsGeoJSON(points: MapPoint[], highlightedId: string | undefined): GeoJSON.FeatureCollection {
-  const adjIds = adjacentIdsOf(points, highlightedId);
+  const adjacentIds = adjacentIdsOf(points, highlightedId);
   return {
     type: 'FeatureCollection',
     features: points.map((p) => {
       const role: Role = p.id === highlightedId
         ? 'highlight'
-        : adjIds.has(p.id)
+        : adjacentIds.has(p.id)
           ? 'adjacent'
           : 'normal';
       const [r, g, b] = idToRgb(p.id, role);
@@ -76,43 +58,7 @@ function toPointsGeoJSON(points: MapPoint[], highlightedId: string | undefined):
   };
 }
 
-function greatCircleSegment(from: MapPoint, to: MapPoint, steps = 64): [number, number][] {
-  const toRad = (d: number) => (d * Math.PI) / 180;
-  const toDeg = (r: number) => (r * 180) / Math.PI;
-  const lat1 = toRad(from.lat), lng1 = toRad(from.lng);
-  const lat2 = toRad(to.lat), lng2 = toRad(to.lng);
-  const d = 2 * Math.asin(Math.sqrt(
-    Math.sin((lat2 - lat1) / 2) ** 2
-    + Math.cos(lat1) * Math.cos(lat2) * Math.sin((lng2 - lng1) / 2) ** 2,
-  ));
-  if (d === 0) return [[from.lng, from.lat]];
-  return Array.from({ length: steps + 1 }, (_, i) => {
-    const t = i / steps;
-    const A = Math.sin((1 - t) * d) / Math.sin(d);
-    const B = Math.sin(t * d) / Math.sin(d);
-    const x = A * Math.cos(lat1) * Math.cos(lng1) + B * Math.cos(lat2) * Math.cos(lng2);
-    const y = A * Math.cos(lat1) * Math.sin(lng1) + B * Math.cos(lat2) * Math.sin(lng2);
-    const z = A * Math.sin(lat1) + B * Math.sin(lat2);
-    return [toDeg(Math.atan2(y, x)), toDeg(Math.atan2(z, Math.sqrt(x * x + y * y)))];
-  });
-}
-
-// 日付変更線越えで経度が飛ばないよう、前の点との差が±180°以内になるよう補正する
-function unwrapLongitudes(coords: [number, number][]): [number, number][] {
-  const result: [number, number][] = [];
-  for (const [rawLng, lat] of coords) {
-    let lng = rawLng;
-    if (result.length > 0) {
-      const prevLng = result[result.length - 1][0];
-      while (lng - prevLng > 180) lng -= 360;
-      while (prevLng - lng > 180) lng += 360;
-    }
-    result.push([lng, lat]);
-  }
-  return result;
-}
-
-// greatCircleSegment の隣接 2 点を 1 Feature とし、両端色の補間色を付与してグラデーションを表現する
+// 各辺を greatCircleSegment で補間し、隣接 2 点を 1 Feature として両端色の補間色を付与する
 function toLineGeoJSON(points: MapPoint[], highlightedId: string | undefined): GeoJSON.FeatureCollection {
   if (points.length < 2) return { type: 'FeatureCollection', features: [] };
   const loop = [...points, points[0]];
@@ -143,8 +89,8 @@ watch(
   () => props.showLine,
   (showLine) => {
     const visibility = (showLine ?? true) ? 'visible' : 'none';
-    map?.setLayoutProperty('line-outline', 'visibility', visibility);
-    map?.setLayoutProperty('line', 'visibility', visibility);
+    map?.setLayoutProperty(LAYER_LINE_OUTLINE, 'visibility', visibility);
+    map?.setLayoutProperty(LAYER_LINE, 'visibility', visibility);
   },
 );
 
@@ -194,7 +140,7 @@ onMounted(() => {
     m.addSource(POINTS_SOURCE_ID, { type: 'geojson', data: toPointsGeoJSON(props.points, props.highlightedId) });
 
     m.addLayer({
-      id: 'line-outline',
+      id: LAYER_LINE_OUTLINE,
       type: 'line',
       source: LINE_SOURCE_ID,
       paint: {
@@ -205,7 +151,7 @@ onMounted(() => {
     });
 
     m.addLayer({
-      id: 'line',
+      id: LAYER_LINE,
       type: 'line',
       source: LINE_SOURCE_ID,
       paint: {
@@ -216,11 +162,11 @@ onMounted(() => {
     });
 
     const lineVisibility = (props.showLine ?? true) ? 'visible' : 'none';
-    m.setLayoutProperty('line-outline', 'visibility', lineVisibility);
-    m.setLayoutProperty('line', 'visibility', lineVisibility);
+    m.setLayoutProperty(LAYER_LINE_OUTLINE, 'visibility', lineVisibility);
+    m.setLayoutProperty(LAYER_LINE, 'visibility', lineVisibility);
 
     m.addLayer({
-      id: 'points-circle',
+      id: LAYER_POINTS_CIRCLE,
       type: 'circle',
       source: POINTS_SOURCE_ID,
       paint: {
@@ -233,7 +179,7 @@ onMounted(() => {
     });
 
     m.addLayer({
-      id: 'points-label',
+      id: LAYER_POINTS_LABEL,
       type: 'symbol',
       source: POINTS_SOURCE_ID,
       layout: {
@@ -248,6 +194,32 @@ onMounted(() => {
         'text-halo-color': '#111111',
         'text-halo-width': ['match', ['get', 'role'], 'highlight', 2, 1],
       },
+    });
+
+    // 視覚的な円より大きい当たり判定用の透明レイヤー
+    m.addLayer({
+      id: LAYER_POINTS_HITAREA,
+      type: 'circle',
+      source: POINTS_SOURCE_ID,
+      paint: {
+        'circle-radius': 48,
+        'circle-opacity': 0,
+      },
+    });
+
+    m.on('click', (e) => {
+      const pointById = new Map(props.points.map(p => [p.id, p]));
+      const { lat, lng } = e.lngLat;
+      const candidates = m.queryRenderedFeatures(e.point, { layers: [LAYER_POINTS_HITAREA] })
+        .map(f => pointById.get(f.properties?.id))
+        .filter((p): p is MapPoint => p !== undefined);
+      const point = candidates.length > 0
+        ? candidates
+          .map(p => ({ p, d: (p.lat - lat) ** 2 + (p.lng - lng) ** 2 }))
+          .reduce((a, b) => a.d < b.d ? a : b)
+          .p
+        : undefined;
+      emit('click', { lat, lng, point });
     });
   });
 });

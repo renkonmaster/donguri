@@ -4,3 +4,9 @@ export type MapPoint = {
   lng: number;
   name?: string;
 };
+
+export type MapClickPayload = {
+  lat: number;
+  lng: number;
+  point?: MapPoint;
+};
