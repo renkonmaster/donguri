@@ -17,7 +17,7 @@ onMounted(() => mobileQuery.addEventListener('change', onQueryChange));
 onUnmounted(() => mobileQuery.removeEventListener('change', onQueryChange));
 
 const bgImage = computed(() =>
-  isMobile.value ? phoneBg : communicationBg
+  isMobile.value ? phoneBg : communicationBg,
 );
 </script>
 
@@ -32,10 +32,15 @@ const bgImage = computed(() =>
         <h1 class="text-5xl font-bold tracking-widest text-white drop-shadow-lg">
           InterKnot
         </h1>
-        <p class="text-white/70">絡まった糸をほどく、位置情報ゲーム</p>
+        <p class="text-white/70">
+          絡まった糸をほどく、位置情報ゲーム
+        </p>
 
         <div class="mx-auto mt-2 flex w-full max-w-xs flex-col gap-4">
-          <label for="player-name" class="sr-only">名前</label>
+          <label
+            for="player-name"
+            class="sr-only"
+          >名前</label>
           <input
             id="player-name"
             v-model="playerName"
@@ -43,7 +48,7 @@ const bgImage = computed(() =>
             placeholder="あなたの名前"
             maxlength="20"
             class="rounded-xl border border-white/30 bg-white/20 px-4 py-3 text-center text-white placeholder-white/50 outline-none backdrop-blur-sm focus:border-white/60 focus:bg-white/25"
-          />
+          >
           <button
             :disabled="playerName.trim() === ''"
             class="rounded-xl bg-emerald-500 py-3 font-semibold text-white shadow transition-colors hover:bg-emerald-400 active:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-40"
@@ -62,7 +67,7 @@ const bgImage = computed(() =>
   background-position: calc(50% - 2px) center;
 }
 
-@media (max-width: 640px) {
+@media (width <= 640px) {
   .page-bg {
     background-position: center;
     overflow-x: hidden;
