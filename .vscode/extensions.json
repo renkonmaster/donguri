@@ -1,0 +1,23 @@
+{
+  "recommendations": [
+    // languages
+    "ms-azuretools.vscode-docker",
+    "golang.go",
+    "yzhang.markdown-all-in-one",
+    "redhat.vscode-yaml",
+    "github.vscode-github-actions",
+
+    // frameworks / libraries
+    "vue.volar",
+    "bradlc.vscode-tailwindcss",
+
+    // linters / formatters
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+    "stylelint.vscode-stylelint",
+
+    // database
+    "mtxr.sqltools",
+    "mtxr.sqltools-driver-pg",
+  ]
+}
