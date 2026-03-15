@@ -11,15 +11,41 @@ let map: maplibregl.Map | null = null;
 
 const POINTS_SOURCE_ID = 'points';
 const LINE_SOURCE_ID = 'line';
+type Rgb = [number, number, number];
+
+// ID を HSL(h, 80%, 55%) の RGB に変換する
+// 黄金角 (137.508°) を掛けることで、連番 ID でも hue が均等に散らばる
+function idToRgb(id: string): Rgb {
+  const n = [...id].reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 0);
+  const h = Math.abs(n) * 137.508 % 360;
+  const s = 0.8, l = 0.55;
+  const a = s * Math.min(l, 1 - l);
+  const channel = (pos: number) => {
+    const k = (pos + h / 30) % 12;
+    return Math.round((l - a * Math.max(-1, Math.min(k - 3, Math.min(9 - k, 1)))) * 255);
+  };
+  return [channel(0), channel(8), channel(4)];
+}
+
+function lerpRgb(a: Rgb, b: Rgb, t: number): Rgb {
+  return [
+    Math.round(a[0] + (b[0] - a[0]) * t),
+    Math.round(a[1] + (b[1] - a[1]) * t),
+    Math.round(a[2] + (b[2] - a[2]) * t),
+  ];
+}
 
 function toPointsGeoJSON(points: MapPoint[]): GeoJSON.FeatureCollection {
   return {
     type: 'FeatureCollection',
-    features: points.map(p => ({
-      type: 'Feature',
-      geometry: { type: 'Point', coordinates: [p.lng, p.lat] },
-      properties: { id: p.id },
-    })),
+    features: points.map((p) => {
+      const [r, g, b] = idToRgb(p.id);
+      return {
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [p.lng, p.lat] },
+        properties: { id: p.id, r, g, b },
+      };
+    }),
   };
 }
 
@@ -59,16 +85,28 @@ function unwrapLongitudes(coords: [number, number][]): [number, number][] {
   return result;
 }
 
+// greatCircleSegment の隣接 2 点を 1 Feature とし、両端色の補間色を付与してグラデーションを表現する
 function toLineGeoJSON(points: MapPoint[]): GeoJSON.FeatureCollection {
   if (points.length < 2) return { type: 'FeatureCollection', features: [] };
   const loop = [...points, points[0]];
-  const coords = unwrapLongitudes(
-    loop.slice(0, -1).flatMap((p, i) => greatCircleSegment(p, loop[i + 1])),
-  );
-  return {
-    type: 'FeatureCollection',
-    features: [{ type: 'Feature', geometry: { type: 'LineString', coordinates: coords }, properties: {} }],
-  };
+  const features: GeoJSON.Feature[] = [];
+
+  for (let i = 0; i < loop.length - 1; i++) {
+    const rgbFrom = idToRgb(loop[i].id);
+    const rgbTo = idToRgb(loop[i + 1].id);
+    const coords = unwrapLongitudes(greatCircleSegment(loop[i], loop[i + 1]));
+
+    for (let j = 0; j < coords.length - 1; j++) {
+      const [r, g, b] = lerpRgb(rgbFrom, rgbTo, j / (coords.length - 1));
+      features.push({
+        type: 'Feature',
+        geometry: { type: 'LineString', coordinates: [coords[j], coords[j + 1]] },
+        properties: { r, g, b },
+      });
+    }
+  }
+
+  return { type: 'FeatureCollection', features };
 }
 
 watch(
@@ -116,13 +154,22 @@ onMounted(() => {
     m.addSource(POINTS_SOURCE_ID, { type: 'geojson', data: toPointsGeoJSON(props.points) });
 
     m.addLayer({
+      id: 'line-outline',
+      type: 'line',
+      source: LINE_SOURCE_ID,
+      paint: {
+        'line-width': 5,
+        'line-color': '#111111',
+      },
+    });
+
+    m.addLayer({
       id: 'line',
       type: 'line',
       source: LINE_SOURCE_ID,
       paint: {
-        'line-color': '#FF4444',
-        'line-width': 2,
-        'line-opacity': 0.8,
+        'line-width': 3,
+        'line-color': ['rgb', ['get', 'r'], ['get', 'g'], ['get', 'b']],
       },
     });
 
@@ -132,9 +179,9 @@ onMounted(() => {
       source: POINTS_SOURCE_ID,
       paint: {
         'circle-radius': 10,
-        'circle-color': '#FF4444',
+        'circle-color': ['rgb', ['get', 'r'], ['get', 'g'], ['get', 'b']],
         'circle-stroke-width': 3,
-        'circle-stroke-color': '#FFFFFF',
+        'circle-stroke-color': '#111111',
       },
     });
   });
