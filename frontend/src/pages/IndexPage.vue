@@ -105,7 +105,7 @@ async function startMatching() {
             placeholder="あなたの名前"
             maxlength="20"
             :disabled="loading"
-            class="rounded-xl border border-white/30 bg-white/20 px-4 py-3 text-center text-white placeholder-white/50 outline-none backdrop-blur-sm focus:border-white/60 focus:bg-white/25 disabled:opacity-60"
+            class="rounded-xl border border-white/30 bg-white/80 px-4 py-3 text-center text-gray-900 placeholder-gray-400 outline-none backdrop-blur-sm focus:border-white/60 focus:bg-white/90 disabled:opacity-60"
           >
           <p
             v-if="errorMessage"
