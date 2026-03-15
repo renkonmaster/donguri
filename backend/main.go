@@ -69,7 +69,15 @@ func run() (err error) {
 		return err
 	}
 
-	if err := http.ListenAndServe(c.AppAddr, sseFlushMiddleware(server)); err != nil {
+	mux := http.NewServeMux()
+	// APIリクエストは ogen のサーバーで処理する
+	mux.Handle("/api/", server)
+
+	// その他のリクエストはフロントエンドの静的ファイルを返す
+	fs := http.FileServer(http.Dir("/app/dist"))
+	mux.Handle("/", fs)
+
+	if err := http.ListenAndServe(c.AppAddr, sseFlushMiddleware(mux)); err != nil {
 		return err
 	}
 
