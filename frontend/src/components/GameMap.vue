@@ -4,7 +4,10 @@ import maplibregl, { type GeoJSONSource } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import type { MapPoint } from '@/types/map';
 
-const props = defineProps<{ points: MapPoint[] }>();
+const props = defineProps<{
+  points: MapPoint[];
+  highlightedId?: string;
+}>();
 
 const mapContainer = ref<HTMLDivElement | null>(null);
 let map: maplibregl.Map | null = null;
@@ -12,13 +15,19 @@ let map: maplibregl.Map | null = null;
 const POINTS_SOURCE_ID = 'points';
 const LINE_SOURCE_ID = 'line';
 type Rgb = [number, number, number];
+type Role = 'highlight' | 'adjacent' | 'normal';
 
-// ID を HSL(h, 80%, 55%) の RGB に変換する
+// ID を HSL の RGB に変換する
 // 黄金角 (137.508°) を掛けることで、連番 ID でも hue が均等に散らばる
-function idToRgb(id: string): Rgb {
+// role に応じて彩度・明度を調整する: highlight は鮮やか、adjacent は通常、normal は淡め
+function idToRgb(id: string, role: Role): Rgb {
   const n = [...id].reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 0);
   const h = Math.abs(n) * 137.508 % 360;
-  const s = 0.8, l = 0.55;
+  const [s, l] = role === 'highlight'
+    ? [0.90, 0.48]
+    : role === 'adjacent'
+      ? [0.75, 0.55]
+      : [0.45, 0.65];
   const a = s * Math.min(l, 1 - l);
   const channel = (pos: number) => {
     const k = (pos + h / 30) % 12;
@@ -35,15 +44,32 @@ function lerpRgb(a: Rgb, b: Rgb, t: number): Rgb {
   ];
 }
 
-function toPointsGeoJSON(points: MapPoint[]): GeoJSON.FeatureCollection {
+// highlightedId に隣接している (ループ上で隣の) 点の ID セットを返す
+function adjacentIdsOf(points: MapPoint[], highlightedId: string | undefined): Set<string> {
+  if (!highlightedId) return new Set();
+  const idx = points.findIndex(p => p.id === highlightedId);
+  if (idx === -1) return new Set();
+  return new Set([
+    points[(idx - 1 + points.length) % points.length].id,
+    points[(idx + 1) % points.length].id,
+  ]);
+}
+
+function toPointsGeoJSON(points: MapPoint[], highlightedId: string | undefined): GeoJSON.FeatureCollection {
+  const adjIds = adjacentIdsOf(points, highlightedId);
   return {
     type: 'FeatureCollection',
     features: points.map((p) => {
-      const [r, g, b] = idToRgb(p.id);
+      const role: Role = p.id === highlightedId
+        ? 'highlight'
+        : adjIds.has(p.id)
+          ? 'adjacent'
+          : 'normal';
+      const [r, g, b] = idToRgb(p.id, role);
       return {
         type: 'Feature',
         geometry: { type: 'Point', coordinates: [p.lng, p.lat] },
-        properties: { id: p.id, r, g, b },
+        properties: { id: p.id, r, g, b, role },
       };
     }),
   };
@@ -86,14 +112,17 @@ function unwrapLongitudes(coords: [number, number][]): [number, number][] {
 }
 
 // greatCircleSegment の隣接 2 点を 1 Feature とし、両端色の補間色を付与してグラデーションを表現する
-function toLineGeoJSON(points: MapPoint[]): GeoJSON.FeatureCollection {
+function toLineGeoJSON(points: MapPoint[], highlightedId: string | undefined): GeoJSON.FeatureCollection {
   if (points.length < 2) return { type: 'FeatureCollection', features: [] };
   const loop = [...points, points[0]];
   const features: GeoJSON.Feature[] = [];
 
   for (let i = 0; i < loop.length - 1; i++) {
-    const rgbFrom = idToRgb(loop[i].id);
-    const rgbTo = idToRgb(loop[i + 1].id);
+    const role: Role = (highlightedId && (loop[i].id === highlightedId || loop[i + 1].id === highlightedId))
+      ? 'adjacent'
+      : 'normal';
+    const rgbFrom = idToRgb(loop[i].id, role);
+    const rgbTo = idToRgb(loop[i + 1].id, role);
     const coords = unwrapLongitudes(greatCircleSegment(loop[i], loop[i + 1]));
 
     for (let j = 0; j < coords.length - 1; j++) {
@@ -101,7 +130,7 @@ function toLineGeoJSON(points: MapPoint[]): GeoJSON.FeatureCollection {
       features.push({
         type: 'Feature',
         geometry: { type: 'LineString', coordinates: [coords[j], coords[j + 1]] },
-        properties: { r, g, b },
+        properties: { r, g, b, role },
       });
     }
   }
@@ -110,17 +139,18 @@ function toLineGeoJSON(points: MapPoint[]): GeoJSON.FeatureCollection {
 }
 
 watch(
-  () => props.points,
-  (points) => {
+  [() => props.points, () => props.highlightedId],
+  ([points, highlightedId]) => {
     // getSource() の戻り値は Source 基底型で setData を持たないため、GeoJSONSource にキャストする
-    (map?.getSource(POINTS_SOURCE_ID) as GeoJSONSource | undefined)?.setData(toPointsGeoJSON(points));
-    (map?.getSource(LINE_SOURCE_ID) as GeoJSONSource | undefined)?.setData(toLineGeoJSON(points));
+    (map?.getSource(POINTS_SOURCE_ID) as GeoJSONSource | undefined)?.setData(toPointsGeoJSON(points, highlightedId));
+    (map?.getSource(LINE_SOURCE_ID) as GeoJSONSource | undefined)?.setData(toLineGeoJSON(points, highlightedId));
   },
 );
 
 onMounted(() => {
   if (!mapContainer.value) return;
 
+  // TODO: 日付変更線をまたぐ場合の対応をする (ハッカソン中は放置)
   let minLng = Infinity, maxLng = -Infinity, minLat = Infinity, maxLat = -Infinity;
   for (const { lng, lat } of props.points) {
     if (lng < minLng) minLng = lng;
@@ -150,16 +180,17 @@ onMounted(() => {
       }
     }
 
-    m.addSource(LINE_SOURCE_ID, { type: 'geojson', data: toLineGeoJSON(props.points) });
-    m.addSource(POINTS_SOURCE_ID, { type: 'geojson', data: toPointsGeoJSON(props.points) });
+    m.addSource(LINE_SOURCE_ID, { type: 'geojson', data: toLineGeoJSON(props.points, props.highlightedId) });
+    m.addSource(POINTS_SOURCE_ID, { type: 'geojson', data: toPointsGeoJSON(props.points, props.highlightedId) });
 
     m.addLayer({
       id: 'line-outline',
       type: 'line',
       source: LINE_SOURCE_ID,
       paint: {
-        'line-width': 5,
+        'line-width': ['match', ['get', 'role'], 'adjacent', 7, 4],
         'line-color': '#111111',
+        'line-opacity': ['match', ['get', 'role'], 'adjacent', 0.9, 0.4],
       },
     });
 
@@ -168,8 +199,9 @@ onMounted(() => {
       type: 'line',
       source: LINE_SOURCE_ID,
       paint: {
-        'line-width': 3,
+        'line-width': ['match', ['get', 'role'], 'adjacent', 4, 1.5],
         'line-color': ['rgb', ['get', 'r'], ['get', 'g'], ['get', 'b']],
+        'line-opacity': ['match', ['get', 'role'], 'adjacent', 1.0, 0.55],
       },
     });
 
@@ -178,10 +210,11 @@ onMounted(() => {
       type: 'circle',
       source: POINTS_SOURCE_ID,
       paint: {
-        'circle-radius': 10,
+        'circle-radius': ['match', ['get', 'role'], 'highlight', 14, 'adjacent', 10, 7],
         'circle-color': ['rgb', ['get', 'r'], ['get', 'g'], ['get', 'b']],
-        'circle-stroke-width': 3,
+        'circle-stroke-width': ['match', ['get', 'role'], 'highlight', 4, 'adjacent', 3, 2],
         'circle-stroke-color': '#111111',
+        'circle-opacity': ['match', ['get', 'role'], 'normal', 0.65, 1.0],
       },
     });
   });
