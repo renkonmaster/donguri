@@ -9,6 +9,7 @@ ENV GOOS=linux
 ENV GOARCH=amd64
 ENV GOCACHE=/root/.cache/go-build
 ENV GOMODCACHE=/go/pkg/mod
+ENV VITE_PUBLIC_URL=https://${KOYEB_PUBLIC_DOMAIN}
 
 RUN \
   --mount=type=cache,target=${GOCACHE} \
