@@ -52,13 +52,13 @@ func (h *Handler) JoinRoom(ctx context.Context, req *api.JoinRoomRequest) (*api.
 	}
 
 	if payload, marshalErr := json.Marshal(map[string]any{
-        "room_id":       roomID,
-        "player_id":     playerID,
-        "joined_count":  joinedCount,
-        "event":         "joined",
-    }); marshalErr == nil {
-        h.publishRoomEvent(roomID, "room_updated", payload)
-    }
+		"room_id":      roomID,
+		"player_id":    playerID,
+		"joined_count": joinedCount,
+		"event":        "joined",
+	}); marshalErr == nil {
+		h.publishRoomEvent(roomID, "room_updated", payload)
+	}
 
 	return &api.JoinRoomResponse{
 		RoomID:   roomID,
