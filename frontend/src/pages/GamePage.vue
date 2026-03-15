@@ -130,11 +130,17 @@ const matchingPoints = computed(() =>
 let sse: EventSource | null = null;
 let fetchController: AbortController | null = null;
 
+function onVisibilityChange() {
+  if (document.visibilityState !== 'visible' || gameDeadline === null) return;
+  timeLeftSeconds.value = Math.max(0, Math.ceil((gameDeadline - Date.now()) / 1000));
+}
+
 onMounted(async () => {
   if (!roomId || !playerId) {
     router.replace('/');
     return;
   }
+  document.addEventListener('visibilitychange', onVisibilityChange);
   const ok = await fetchRoomState();
   if (!ok) return;
   sse = new EventSource(`/api/rooms/${roomId}/stream?player_id=${playerId}`);
@@ -181,6 +187,7 @@ function stopGameTimer() {
 }
 
 onUnmounted(() => {
+  document.removeEventListener('visibilitychange', onVisibilityChange);
   sse?.close();
   fetchController?.abort();
   if (countdownTimer !== null) {
