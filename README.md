@@ -1,4 +1,4 @@
-# donguri (仮)
+# InterKnot
 
 三大学合同ハッカソンＡ班「チームどんぐり」による Web ゲームのリポジトリです。
 
@@ -10,8 +10,8 @@
   - Git の初期設定が済んでいる必要があります。
 - [**Docker Desktop**](https://www.docker.com/ja-jp/get-started/) をインストールしてください。
 - 開発環境は [**VS Code**](https://code.visualstudio.com/) (または VS Code 互換エディタ) を使用することを推奨します。セットアップ方法は [**VS Code セットアップガイド**](.vscode/README.md) を参照してください。
-- フロントエンド開発時の環境構築は [**donguri (仮) フロントエンド開発ガイド**](frontend/README.md) を参照してください。
-- バックエンド開発時の環境構築は [**donguri (仮) バックエンド開発ガイド**](backend/README.md) を参照してください。
+- フロントエンド開発時の環境構築は [**InterKnot フロントエンド開発ガイド**](frontend/README.md) を参照してください。
+- バックエンド開発時の環境構築は [**InterKnot バックエンド開発ガイド**](backend/README.md) を参照してください。
 
 ---
 
