@@ -10,6 +10,8 @@ const props = defineProps<{
   points: MapPoint[];
   highlightedId?: string;
   showLine?: boolean;
+  autoFit?: boolean;
+  unreadIds?: string[];
 }>();
 
 const emit = defineEmits<{
@@ -19,6 +21,17 @@ const emit = defineEmits<{
 const mapContainer = ref<HTMLDivElement | null>(null);
 let map: MaplibreMap | null = null;
 
+function calcBounds(points: MapPoint[]) {
+  let minLng = Infinity, maxLng = -Infinity, minLat = Infinity, maxLat = -Infinity;
+  for (const { lng, lat } of points) {
+    if (lng < minLng) minLng = lng;
+    if (lng > maxLng) maxLng = lng;
+    if (lat < minLat) minLat = lat;
+    if (lat > maxLat) maxLat = lat;
+  }
+  return { minLng, maxLng, minLat, maxLat };
+}
+
 const POINTS_SOURCE_ID = 'points';
 const LINE_SOURCE_ID = 'line';
 const LAYER_LINE_OUTLINE = 'line-outline';
@@ -26,6 +39,29 @@ const LAYER_LINE = 'line-color';
 const LAYER_POINTS_CIRCLE = 'points-circle';
 const LAYER_POINTS_LABEL = 'points-label';
 const LAYER_POINTS_HITAREA = 'points-hitarea';
+
+// 未読パルス位置: map.project() でプライマリ画素座標を取り、worldSize 分ずらして 3 コピー分を Vue で描画
+type UnreadPos = { key: string; x: number; y: number; r: number; g: number; b: number };
+const unreadPositions = ref<UnreadPos[]>([]);
+
+function updateUnreadPositions() {
+  if (!map) {
+    unreadPositions.value = [];
+    return;
+  }
+  const worldSize = 512 * Math.pow(2, map.getZoom());
+  const positions: UnreadPos[] = [];
+  for (const id of (props.unreadIds ?? [])) {
+    const p = props.points.find(pt => pt.id === id);
+    if (!p) continue;
+    const [r, g, b] = idToRgb(p.id, 'highlight');
+    const primary = map.project([p.lng, p.lat]);
+    for (const n of [-1, 0, 1]) {
+      positions.push({ key: `${id}:${n}`, x: primary.x + n * worldSize, y: primary.y, r, g, b });
+    }
+  }
+  unreadPositions.value = positions;
+}
 
 // highlightedId に隣接している (ループ上で隣の) 点の ID セットを返す
 function adjacentIdsOf(points: MapPoint[], highlightedId: string | undefined): Set<string> {
@@ -38,8 +74,12 @@ function adjacentIdsOf(points: MapPoint[], highlightedId: string | undefined): S
   ]);
 }
 
-function toPointsGeoJSON(points: MapPoint[], highlightedId: string | undefined): GeoJSON.FeatureCollection {
-  const adjacentIds = adjacentIdsOf(points, highlightedId);
+function toPointsGeoJSON(
+  points: MapPoint[],
+  highlightedId: string | undefined,
+  showAdjacency: boolean,
+): GeoJSON.FeatureCollection {
+  const adjacentIds = showAdjacency ? adjacentIdsOf(points, highlightedId) : new Set<string>();
   return {
     type: 'FeatureCollection',
     features: points.map((p) => {
@@ -106,10 +146,20 @@ watch(
   [() => props.points, () => props.highlightedId],
   ([points, highlightedId]) => {
     // getSource() の戻り値は Source 基底型で setData を持たないため、GeoJSONSource にキャストする
-    (map?.getSource(POINTS_SOURCE_ID) as GeoJSONSource | undefined)?.setData(toPointsGeoJSON(points, highlightedId));
-    (map?.getSource(LINE_SOURCE_ID) as GeoJSONSource | undefined)?.setData(toLineGeoJSON(points, highlightedId));
+    const showAdjacency = props.showLine ?? true;
+    const pointsSrc = map?.getSource(POINTS_SOURCE_ID) as GeoJSONSource | undefined;
+    const lineSrc = map?.getSource(LINE_SOURCE_ID) as GeoJSONSource | undefined;
+    pointsSrc?.setData(toPointsGeoJSON(points, highlightedId, showAdjacency));
+    lineSrc?.setData(toLineGeoJSON(points, highlightedId));
+    updateUnreadPositions();
+    if (props.autoFit && map && points.length > 0) {
+      const { minLng, maxLng, minLat, maxLat } = calcBounds(points);
+      map.fitBounds([[minLng, minLat], [maxLng, maxLat]], { padding: 80 });
+    }
   },
 );
+
+watch(() => props.unreadIds, updateUnreadPositions);
 
 onMounted(async () => {
   if (!mapContainer.value) return;
@@ -118,14 +168,8 @@ onMounted(async () => {
   const maplibregl = (await import('maplibre-gl')).default;
 
   // TODO: 日付変更線をまたぐ場合の対応をする (ハッカソン中は放置)
-  let minLng = Infinity, maxLng = -Infinity, minLat = Infinity, maxLat = -Infinity;
-  for (const { lng, lat } of props.points) {
-    if (lng < minLng) minLng = lng;
-    if (lng > maxLng) maxLng = lng;
-    if (lat < minLat) minLat = lat;
-    if (lat > maxLat) maxLat = lat;
-  }
   const hasBounds = props.points.length > 0;
+  const { minLng, maxLng, minLat, maxLat } = calcBounds(props.points);
 
   map = new maplibregl.Map({
     container: mapContainer.value,
@@ -148,7 +192,9 @@ onMounted(async () => {
     }
 
     m.addSource(LINE_SOURCE_ID, { type: 'geojson', data: toLineGeoJSON(props.points, props.highlightedId) });
-    m.addSource(POINTS_SOURCE_ID, { type: 'geojson', data: toPointsGeoJSON(props.points, props.highlightedId) });
+    const initShowAdjacency = props.showLine ?? true;
+    const initPoints = toPointsGeoJSON(props.points, props.highlightedId, initShowAdjacency);
+    m.addSource(POINTS_SOURCE_ID, { type: 'geojson', data: initPoints });
 
     m.addLayer({
       id: LAYER_LINE_OUTLINE,
@@ -207,6 +253,9 @@ onMounted(async () => {
       },
     });
 
+    m.on('move', updateUnreadPositions);
+    updateUnreadPositions();
+
     // 視覚的な円より大きい当たり判定用の透明レイヤー
     m.addLayer({
       id: LAYER_POINTS_HITAREA,
@@ -242,8 +291,62 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div
-    ref="mapContainer"
-    class="size-full"
-  />
+  <div class="relative size-full">
+    <div
+      ref="mapContainer"
+      class="size-full"
+    />
+    <!-- 未読パルスオーバーレイ: CSS アニメーション + ワールドコピー対応 -->
+    <div class="pointer-events-none absolute inset-0 overflow-hidden">
+      <div
+        v-for="pos in unreadPositions"
+        :key="pos.key"
+        class="unread-pulse-wrapper"
+        :style="{ '--pr': pos.r, '--pg': pos.g, '--pb': pos.b, transform: `translate(${pos.x}px, ${pos.y}px)` }"
+      >
+        <div class="unread-pulse-ring" />
+      </div>
+    </div>
+  </div>
 </template>
+
+<style scoped>
+@keyframes unread-ping {
+  from {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+
+  to {
+    transform: scale(3.5);
+    opacity: 0;
+  }
+}
+
+.unread-pulse-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+}
+
+.unread-pulse-ring {
+  position: absolute;
+  top: -14px;
+  left: -14px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: rgb(var(--pr) var(--pg) var(--pb));
+  animation: unread-ping 0.5s linear infinite;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .unread-pulse-ring {
+    animation: none;
+    opacity: 0.6;
+  }
+}
+</style>
