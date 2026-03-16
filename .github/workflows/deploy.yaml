@@ -31,6 +31,6 @@ jobs:
       - name: Install and deploy to Koyeb
         uses: koyeb/action-git-deploy@v1
         with:
-          app-name: "involved-cher"
-          service-name: "donguri"
+          app-name: "donguri"
+          service-name: "involved-cher"
           git-branch: ${{ github.ref_name }}
