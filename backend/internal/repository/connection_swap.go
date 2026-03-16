@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -37,6 +38,19 @@ func (r *Repository) SetSwapIntent(ctx context.Context, params SetSwapIntentPara
 	result := &SetSwapIntentResult{Matched: false, RoomStatus: database.RoomStatusPlaying}
 
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var room database.RoomEntity
+		if err := tx.Select("status").Take(&room, "id = ?", params.RoomID).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrRoomNotFound
+			}
+
+			return fmt.Errorf("select room: %w", err)
+		}
+		result.RoomStatus = room.Status
+		if room.Status != database.RoomStatusPlaying {
+			return ErrRoomNotPlaying
+		}
+
 		var conflict clause.OnConflict
 		var c1, c2, c3 clause.Column
 		c1.Name = "room_id"
@@ -49,11 +63,6 @@ func (r *Repository) SetSwapIntent(ctx context.Context, params SetSwapIntentPara
 		})
 		if err := tx.Clauses(conflict).Create(intent).Error; err != nil {
 			return fmt.Errorf("upsert swap intent: %w", err)
-		}
-
-		var room database.RoomEntity
-		if err := tx.Select("status").Take(&room, "id = ?", params.RoomID).Error; err == nil {
-			result.RoomStatus = room.Status
 		}
 
 		var reverseIntentCount int64

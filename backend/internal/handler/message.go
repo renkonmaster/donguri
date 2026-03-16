@@ -80,15 +80,21 @@ func (h *Handler) GetMessages(ctx context.Context, params api.GetMessagesParams)
 }
 
 func messageValidationError(err error) *api.ErrorStatusCode {
+	if errors.Is(err, repository.ErrRoomNotFound) {
+		return &api.ErrorStatusCode{
+			StatusCode: http.StatusNotFound,
+			Response:   api.Error{Message: err.Error()},
+		}
+	}
+
 	if errors.Is(err, repository.ErrReceiverIDRequired) ||
 		errors.Is(err, repository.ErrSenderReceiverSame) ||
 		errors.Is(err, repository.ErrPlayerNotFoundInRoom) ||
-		errors.Is(err, repository.ErrPlayersNotAdjacent) {
+		errors.Is(err, repository.ErrPlayersNotAdjacent) ||
+		errors.Is(err, repository.ErrRoomNotPlaying) {
 		return &api.ErrorStatusCode{
 			StatusCode: http.StatusBadRequest,
-			Response: api.Error{
-				Message: err.Error(),
-			},
+			Response:   api.Error{Message: err.Error()},
 		}
 	}
 

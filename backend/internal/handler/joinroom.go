@@ -15,7 +15,7 @@ import (
 
 const (
 	maxPlayersPerRoom = 8
-	gameDuration      = 10 * time.Minute
+	gameDuration      = 5 * time.Minute
 	dbOpTimeout       = 5 * time.Second
 )
 
@@ -107,7 +107,34 @@ func (h *Handler) scheduleGameStart(roomID uuid.UUID) {
 		return
 	}
 
+	if err := h.repo.ShufflePlayerOrderIndices(ctx, roomID); err != nil {
+		slog.Error("scheduleGameStart: failed to shuffle player order indices", "room_id", roomID, "error", err)
+	}
+
 	if payload, marshalErr := json.Marshal(map[string]any{"room_id": roomID}); marshalErr == nil {
 		h.publishRoomEvent(roomID, "room_started", payload)
+	}
+
+	go h.scheduleGameTimeout(roomID, gameDuration)
+}
+
+func (h *Handler) scheduleGameTimeout(roomID uuid.UUID, duration time.Duration) {
+	time.Sleep(duration)
+
+	ctx, cancel := context.WithTimeout(context.Background(), dbOpTimeout)
+	defer cancel()
+
+	changed, err := h.repo.ExpireRoomIfPlaying(ctx, roomID)
+	if err != nil {
+		slog.Error("scheduleGameTimeout: failed to expire room", "room_id", roomID, "error", err)
+
+		return
+	}
+	if !changed {
+		return
+	}
+
+	if payload, marshalErr := json.Marshal(map[string]any{"room_id": roomID, "reason": "timeout"}); marshalErr == nil {
+		h.publishRoomEvent(roomID, "room_updated", payload)
 	}
 }

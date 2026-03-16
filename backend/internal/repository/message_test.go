@@ -37,6 +37,9 @@ func TestCreateMessage_AdjacentValidation(t *testing.T) {
 
 	room, err := repo.CreateRoom(ctx)
 	assert.NilError(t, err)
+	assert.NilError(t, repo.db.WithContext(ctx).Model(new(database.RoomEntity)).
+		Where("id = ?", room.ID).
+		Update("status", database.RoomStatusPlaying).Error)
 
 	// 4 人のリングを構成: 0-1-2-3-0。0 と 1 は隣接、0 と 2 は非隣接
 	sender, err := repo.CreatePlayer(ctx, room.ID, "sender", 33.0, 131.0, 0)

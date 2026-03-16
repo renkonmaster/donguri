@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/renkonmaster/donguri/infrastructure/database"
+	"gorm.io/gorm"
 )
 
 var (
@@ -15,6 +16,8 @@ var (
 	ErrSenderReceiverSame   = errors.New("sender and receiver must be different")
 	ErrPlayerNotFoundInRoom = errors.New("player is not found in room")
 	ErrPlayersNotAdjacent   = errors.New("sender and receiver are not adjacent")
+	ErrRoomNotPlaying       = errors.New("room is not in playing state")
+	ErrRoomNotFound         = errors.New("room is not found")
 )
 
 type CreateMessageParams struct {
@@ -31,6 +34,18 @@ func (r *Repository) CreateMessage(ctx context.Context, params CreateMessagePara
 
 	if params.SenderID == params.ReceiverID {
 		return nil, ErrSenderReceiverSame
+	}
+
+	var room database.RoomEntity
+	if err := r.db.WithContext(ctx).Select("status").Take(&room, "id = ?", params.RoomID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrRoomNotFound
+		}
+
+		return nil, fmt.Errorf("select room: %w", err)
+	}
+	if room.Status != database.RoomStatusPlaying {
+		return nil, ErrRoomNotPlaying
 	}
 
 	var players []database.PlayerEntity

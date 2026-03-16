@@ -47,6 +47,7 @@ backend/build: ## バイナリをビルドする
 	go -C backend build -o ./bin/server ./main.go
 
 backend/lint: ## Linter を実行する
+
 	cd backend && golangci-lint run --timeout=5m ./...
 
 backend/lint/fix: ## Linter を実行して自動修正する
