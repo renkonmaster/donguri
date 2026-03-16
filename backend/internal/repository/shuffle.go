@@ -105,13 +105,19 @@ func applyOrderIndexPermutation(ctx context.Context, db *gorm.DB, roomID uuid.UU
 	})
 }
 
-// countIntersectionsInMem は points を order_index 順に結んだ折れ線の交差数を返す。
+// countIntersectionsInMem は points を order_index 順に結んだ閉路の交差数を返す。
+// 隣接辺（端点を共有する辺）は除外する。
 func countIntersectionsInMem(pts []Point) int {
 	n := len(pts)
 	count := 0
-	for i := 0; i < n-2; i++ {
-		for j := i + 2; j < n-1; j++ {
-			if segmentsIntersect(pts[i], pts[i+1], pts[j], pts[j+1]) {
+	for i := 0; i < n; i++ {
+		nextI := (i + 1) % n
+		for j := i + 1; j < n; j++ {
+			nextJ := (j + 1) % n
+			if j == nextI || nextJ == i {
+				continue
+			}
+			if segmentsIntersect(pts[i], pts[nextI], pts[j], pts[nextJ]) {
 				count++
 			}
 		}

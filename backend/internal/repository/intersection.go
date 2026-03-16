@@ -44,14 +44,22 @@ func (r *Repository) GetIntersectingEdgePairs(ctx context.Context, roomID uuid.U
 	}
 	var rows []row
 
+	// COALESCE + FIRST_VALUE で最終プレイヤーから先頭プレイヤーへの閉路辺を含める。
+	// フロントエンドの地図描画も閉路であるため、交差判定の定義を一致させる。
 	err := db.WithContext(ctx).Raw(`
 		WITH lines AS (
 			SELECT
 				order_index AS start_order,
-				LEAD(order_index) OVER (ORDER BY order_index) AS end_order,
+				COALESCE(
+					LEAD(order_index) OVER (ORDER BY order_index),
+					FIRST_VALUE(order_index) OVER (ORDER BY order_index)
+				) AS end_order,
 				ST_MakeLine(
 					location::geometry,
-					LEAD(location::geometry) OVER (ORDER BY order_index)
+					COALESCE(
+						LEAD(location::geometry) OVER (ORDER BY order_index),
+						FIRST_VALUE(location::geometry) OVER (ORDER BY order_index)
+					)
 				) AS geom
 			FROM players
 			WHERE room_id = ?
@@ -65,8 +73,6 @@ func (r *Repository) GetIntersectingEdgePairs(ctx context.Context, roomID uuid.U
 				ST_Intersection(l1.geom, l2.geom) AS geom
 			FROM lines l1, lines l2
 			WHERE l1.start_order < l2.start_order
-			  AND l1.geom IS NOT NULL
-			  AND l2.geom IS NOT NULL
 			  AND ST_Intersects(l1.geom, l2.geom)
 			  AND NOT ST_Touches(l1.geom, l2.geom)
 		)

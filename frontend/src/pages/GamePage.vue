@@ -184,6 +184,7 @@ function stopGameTimer() {
   clearInterval(gameTimer);
   gameTimer = null;
   gameDeadline = null;
+  timeLeftSeconds.value = 0;
 }
 
 onUnmounted(() => {

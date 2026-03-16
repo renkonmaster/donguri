@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -39,6 +40,10 @@ func (r *Repository) SetSwapIntent(ctx context.Context, params SetSwapIntentPara
 	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var room database.RoomEntity
 		if err := tx.Select("status").Take(&room, "id = ?", params.RoomID).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrRoomNotFound
+			}
+
 			return fmt.Errorf("select room: %w", err)
 		}
 		result.RoomStatus = room.Status
